@@ -1,11 +1,10 @@
 # Dependencies
 /node_modules
-/pnpm-lock.yaml
-
 # Build and Temp Directories
 /dist
 /.next
 /out
+/tmp
 
 # TurboRepo specific
 /.turbo
