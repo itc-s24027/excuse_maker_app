@@ -17,7 +17,7 @@
 .vscode/
 
 # Environment Variables
-.env
+apps/backend/.env
 .env.local
 .env.development.local
 .env.production.local
