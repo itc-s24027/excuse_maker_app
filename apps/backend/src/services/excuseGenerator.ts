@@ -1,10 +1,10 @@
 import { GoogleGenAI } from '@google/genai';
 
-// 外部からプロンプトを受け取って言い訳を生成する関数にするぜ
+// 外部からプロンプトを受け取って言い訳を生成する関数
 export async function generateExcuse(context: string): Promise<string> {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-        throw new Error("GEMINI_API_KEY environment variable not set. It should be loaded via app.ts startup.");
+        throw new Error("GEMINI_API_KEY 環境変数が設定されていません。app.ts の起動時にロードされるはずです。");
     }
 
     const ai = new GoogleGenAI({ apiKey });
@@ -29,6 +29,6 @@ export async function generateExcuse(context: string): Promise<string> {
     } catch (error) {
         console.error("Gemini 実行エラー:", error);
         // エラーを呼び出し元に投げる
-        throw new Error("Failed to generate excuse from Gemini.");
+        throw new Error("Geminiからの言い訳を生成できませんでした。");
     }
 }

@@ -1,16 +1,16 @@
-// `apps/backend/src/app.ts`
+// `apps/backend/src/app.ts` (修正後)
+
 import * as dotenv from "dotenv";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import express from "express";
 import cors from "cors";
 import test from "./routes/test.ts";
-import { generateExcuse } from "./services/geminiTest.ts";
-
+import { initializeGeminiTest } from "./initializers/gemini.ts";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// 修正: 一つ上のディレクトリにある `apps/backend/.env` を読み込む
+// .env 読み込み (変更なし)
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 process.env.DOTENV_LOADED = "true";
 
@@ -24,19 +24,8 @@ const port = process.env.PORT || '3001';
 app.listen(port, () => {
     console.log(`Backend running on port ${port}`);
 
-    if (process.env.ENABLE_GEMINI === "true") {
-        // テスト用の状況を引数として渡す
-        generateExcuse("学校に遅刻しそう")
-            .then(excuse => {
-                console.log("--- Gemini (言い訳生成) 初期テスト完了 ---");
-                console.log(`生成された言い訳:\n${excuse}`);
-            })
-            .catch((err: unknown) => { // エラーの型も unknown にしておくと安心だ
-                console.error("Failed to run Gemini test:", err);
-            });
-    } else {
-        console.log("Gemini init skipped (ENABLE_GEMINI not true)");
-    }
+
+    void initializeGeminiTest();
 });
 
 export default app;
