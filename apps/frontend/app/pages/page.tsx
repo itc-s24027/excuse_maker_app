@@ -1,4 +1,4 @@
-import GeminiIntegration from '@/app/components/GeminiInteraction';
+import GeminiIntegration from '../components/GeminiInteraction';
 
 export default function Home() {
     return (

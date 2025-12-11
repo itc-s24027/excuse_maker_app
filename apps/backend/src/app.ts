@@ -1,16 +1,13 @@
-// `apps/backend/src/app.ts` (修正後)
-
 import * as dotenv from "dotenv";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import express from "express";
 import cors from "cors";
-import test from "./routes/test.js";
-// import { initializeGeminiTest } from "./initializers/gemini.js";
+import test from "./routes/Initialization.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// .env 読み込み (変更なし)
+// .env 読み込み
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 process.env.DOTENV_LOADED = "true";
 
@@ -23,9 +20,6 @@ app.use("/api", test);
 const port = process.env.PORT || '3001';
 app.listen(port, () => {
     console.log(`Backend running on port ${port}`);
-
-
-    // void initializeGeminiTest();
 });
 
 export default app;
