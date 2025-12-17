@@ -1,3 +1,4 @@
+// バックエンドのAPIにアクセスし、生成された言い訳を取得して表示するコンポーネント
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,6 +8,9 @@ export default function ExcuseComponent() {
     const [error, setError] = useState<string | null>(null);
 
     const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (!API_URL) {
+        throw new Error("No NEXT_PUBLIC_API_BASE_URLが設定されていません");
+    }
 
     useEffect(() => {
         async function fetchExcuse() {
@@ -29,12 +33,15 @@ export default function ExcuseComponent() {
             }
         }
         fetchExcuse();
-    }, []);
+    }, [API_URL]);
     return (
         <div>
+            {/*loadingがtrueの時に表示*/}
             {loading && <p>読み込み中…</p>}
+            {/*errorがnullでなければ表示*/}
             {error && <p style={{ color: "red" }}>エラー: {error}</p>}
-            {excuse && <h1>言い訳: {excuse}</h1>}
+            {/*excuseがnullでなければ表示*/}
+            {excuse && <p>言い訳: {excuse}</p>}
         </div>
     );
 }

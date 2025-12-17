@@ -1,9 +1,9 @@
-import GeminiIntegration from './_components/GeminiInteraction';
+import GeminiIntegration from './_components/gemini/GeminiInteraction';
 
 export default function Home() {
     return (
         <main>
-            <h1>ようこそ</h1>
+            <h1>言い訳を生成</h1>
             <GeminiIntegration />
         </main>
     )

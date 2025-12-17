@@ -1,9 +1,10 @@
+// フロントからのリクエストをバックエンドのAPIにプロキシする
 import {Router} from "express";
 
 const router = Router();
 const API_URL = process.env.API_URL;
 
-router.get('/api/gemini-test', async (req, res) => {
+router.get('/gemini-test', async (req, res) => {
     try {
         const response = await fetch(`${API_URL}/api/gemini-test`);
         if (!response.ok) {
