@@ -6,7 +6,7 @@ const API_URL = process.env.API_URL;
 
 router.get('/gemini-test', async (req, res) => {
     try {
-        const response = await fetch(`${API_URL}/api/gemini-test`);
+        const response = await fetch(`${API_URL}/gemini-test`);
         if (!response.ok) {
             throw new Error('バックエンドAPIの呼び出し失敗');
         }

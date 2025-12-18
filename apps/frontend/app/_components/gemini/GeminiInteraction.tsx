@@ -17,7 +17,7 @@ export default function ExcuseComponent() {
             setLoading(true);
             setError(null);
             try {
-                const res = await fetch(`${API_URL}/api/gemini-test`);
+                const res = await fetch(`${API_URL}/gemini-test`);
                 if (!res.ok) throw new Error("API呼び出し失敗");
                 const data = await res.json();
                 setExcuse(data.excuse);
