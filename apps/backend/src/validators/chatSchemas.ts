@@ -12,13 +12,6 @@ export const createChatSchema = z.object({
     tags: z.array(z.string().min(1, "タグを一つ以上指定してください").max(36))   // タグ
 });
 
-// チャット作成用入力型
-export type CreateChatInput = z.infer<typeof createChatSchema>; // タイトル、状況、タグを含む型
-
-// チャット評価用スキーマ
 export const evaluationSchema = z.object({
-    success: z.union([z.boolean(), z.null()]), // true成功 / false失敗 / null未評価
+    success: z.boolean().nullable() // true, false, または null（未評価）
 });
-
-// チャット評価用入力型
-export type EvaluationInput = z.infer<typeof evaluationSchema>; // success フィールドのみを含む型
