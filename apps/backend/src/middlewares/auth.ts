@@ -4,7 +4,7 @@ import type　{ Request, Response, NextFunction } from "express";
 import { getFirebaseAdmin } from "../config/firebaseAdmin.js";
 
 export interface AuthRequest extends Request {
-    user?: {
+    user: {
         uid: string;
         email?: string | undefined;
         name?: string | undefined;
