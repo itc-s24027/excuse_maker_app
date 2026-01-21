@@ -10,8 +10,6 @@ const firebaseConfig = {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
 };
 
-console.log("🔥 firebaseConfig", firebaseConfig);
-
 // 初期化済みか確認し、初期化済みなら既存のアプリを取得
 const app = !getApps().length
     ? initializeApp(firebaseConfig)

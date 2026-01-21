@@ -4,6 +4,7 @@ import { auth } from "@/app/lib/firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import GeminiIntegration from "./_components/gemini/GeminiInteraction";
 import LogoutButton from "@/app/_components/GoogleLogoutButton";
+import LoginButton from "@/app/_components/GoogleLoginButton";
 
 export default function Home() {
     const [user, loading] = useAuthState(auth);
@@ -13,7 +14,12 @@ export default function Home() {
     }
 
     if (!user) {
-        return <p>未ログインです</p>;
+        return (
+            <>
+                <p>ログインしてください</p>
+                <LoginButton />
+            </>
+        )
     }
 
     return (

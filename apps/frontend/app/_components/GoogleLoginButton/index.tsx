@@ -1,7 +1,9 @@
+// Googleログインボタン
 "use client";
 
 import { signInWithPopup, } from "firebase/auth";
 import { auth, provider } from "@/app/lib/firebase";
+// ページ遷移用フック
 import { useRouter } from "next/navigation";
 
 export default function GoogleLoginButton() {
