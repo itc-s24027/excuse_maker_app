@@ -1,7 +1,7 @@
 // 言い訳生成API: モック
 import { Router } from "express";
 import { generateExcuseMock } from "../../services/excuse/generateExcuse.mock.js";
-import { verifyFirebaseToken } from "../../middleware/auth.js";
+import { verifyFirebaseToken } from "../../middlewares/auth.js";
 
 const router = Router();
 

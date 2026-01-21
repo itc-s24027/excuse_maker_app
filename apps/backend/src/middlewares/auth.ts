@@ -1,18 +1,47 @@
-// Firebase ID token 検証ミドルウェア
+// Firebaseトークンを検証するミドルウェア
+// これをapiルートに適用して、認証されたユーザーのみがアクセスできるようする
+import type　{ Request, Response, NextFunction } from "express";
+import { getFirebaseAdmin } from "../config/firebaseAdmin.js";
 
-import { Request, Response, NextFunction } from "express";
-import admin from "../lib/firebaseadmin.js";
+export interface AuthRequest extends Request {
+    user?: {
+        uid: string;
+        email?: string | undefined;
+        name?: string | undefined;
+    };
+}
 
-export default async function auth(req: Request, res: Response, next: NextFunction) {
-    const header = req.header("Authorization") ?? "";
-    const token = header.replace(/^Bearer\s+/i, "");
-    if (!token) return res.status(401).json({ error: "no token" });
+// Firebaseトークンを検証するミドルウェア
+export const verifyFirebaseToken = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+) => {
+
+    if (!req.headers.authorization?.startsWith("Bearer ")) {
+        return res.status(401).json({ message: "トークンなし" });
+    }
+
+    // トークンを抽出
+    const token = req.headers.authorization.split(" ")[1];
+    // トークンが存在しない場合の処理
+    if (!token) {
+        return res.status(401).json({ message: "トークン形式が不正" });
+    }
 
     try {
-        const decoded = await admin.auth().verifyIdToken(token);
-        (req as any).user = { uid: decoded.uid, email: decoded.email };
+        const firebaseAdmin = getFirebaseAdmin();
+        const decoded = await firebaseAdmin.auth().verifyIdToken(token);
+        console.log("デコード成功");
+        req.user = {
+            uid: decoded.uid,
+            email: decoded.email,
+            name: decoded.name,
+        };
+        // 認証成功、次のミドルウェアまたはルートハンドラーへ
         next();
-    } catch (err) {
-        res.status(401).json({ error: "invalid token" });
+    } catch (error) {
+        console.error("verifyIdToken エラー:", error);
+        return res.status(401).json({ message: "トークン無効" });
     }
-}
+};

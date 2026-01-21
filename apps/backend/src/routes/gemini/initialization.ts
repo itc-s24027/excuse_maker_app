@@ -2,7 +2,7 @@
 import {Router} from "express";
 import { isGeminiEnabled } from "../../config/geminiConfig.js";
 import { generateExcuse } from "../../services/excuse/generateExcuse.gemini.js";
-import { verifyFirebaseToken } from "../../middleware/auth.js";
+import { verifyFirebaseToken } from "../../middlewares/auth.js";
 
 
 const router = Router();
