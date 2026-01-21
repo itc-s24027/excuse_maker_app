@@ -15,14 +15,15 @@ datasource db {
 
 model User {
   id        String   @id @default(uuid(7)) @db.VarChar(36)
+  uid       String   @unique @db.VarChar(128)
   email     String   @unique @db.VarChar(254)
   nickname  String?  @db.VarChar(512)
   createdAt DateTime @default(now())
-  updateAt  DateTime @updatedAt
-  isDelete  Boolean  @default(false)
+  updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
 
-  chat Chat[]
-  like Like[]
+  chats Chat[]
+  likes Like[]
 }
 
 model Chat {
@@ -31,12 +32,12 @@ model Chat {
   title     String?  @db.VarChar(255)
   createdAt DateTime @default(now())
   isShared  Boolean  @default(false)
-  isDelete  Boolean  @default(false)
+  isDeleted Boolean  @default(false)
 
   // リレーション
   user User @relation(fields: [userId], references: [id])
 
-  excuse Excuse[]
+  excuses Excuse[]
 }
 
 model Excuse {
@@ -46,11 +47,12 @@ model Excuse {
   excuseText String   @db.Text
   success    Boolean?
   createdAt  DateTime @default(now())
+  isDeleted  Boolean  @default(false)
 
   // リレーション
-  chat Chat        @relation(fields: [chatId], references: [id])
-  tag  ExcuseTag[]
-  like Like[]
+  chat  Chat        @relation(fields: [chatId], references: [id])
+  tags  ExcuseTag[]
+  likes Like[]
 }
 
 model Tag {
@@ -59,7 +61,7 @@ model Tag {
   createdAt DateTime @default(now())
 
   // リレーション
-  excuse ExcuseTag[]
+  excuses ExcuseTag[]
 }
 
 model ExcuseTag {
@@ -78,7 +80,7 @@ model Like {
   userId    String   @db.VarChar(36) //FK
   excuseId  String   @db.VarChar(36) //FK
   createdAt DateTime @default(now())
-  isDelete  Boolean  @default(false)
+  isDeleted Boolean  @default(false)
 
   // リレーション
   user   User   @relation(fields: [userId], references: [id])
