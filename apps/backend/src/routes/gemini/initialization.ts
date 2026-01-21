@@ -1,11 +1,13 @@
 // 言い訳生成API
 import {Router} from "express";
-import { isGeminiEnabled } from "../../lib/geminiConfig.js";
+import { isGeminiEnabled } from "../../config/geminiConfig.js";
 import { generateExcuse } from "../../services/excuse/generateExcuse.gemini.js";
+import { verifyFirebaseToken } from "../../middleware/auth.js";
+
 
 const router = Router();
 
-router.get("/gemini-test", async (req, res) => {
+router.get("/gemini-test",verifyFirebaseToken, async (req, res) => {
     if (!isGeminiEnabled()) {
         return res.status(503).json({ message: "Geminiは有効になっていません" });
     }

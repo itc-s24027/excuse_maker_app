@@ -1,6 +1,7 @@
+// ログインページ
 "use client";
 
-import { auth, provider } from "@/app/lib/firebase";
+import { auth} from "@/app/lib/firebase";
 import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useEffect } from "react";
@@ -12,6 +13,7 @@ export default function SignInPage() {
 
     useEffect(() => {
         if (user) {
+            // ログイン済みならホームにリダイレクト
             router.push("/");
         }
     }, [user, router]);
@@ -23,4 +25,3 @@ export default function SignInPage() {
         </>
     );
 }
-
