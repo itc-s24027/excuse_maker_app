@@ -2,6 +2,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { apifetch } from "@/app/lib/apiClient";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/app/lib/firebase";
 export default function ExcuseComponent() {
     const [excuse, setExcuse] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -13,27 +16,35 @@ export default function ExcuseComponent() {
     }
 
     useEffect(() => {
-        async function fetchExcuse() {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                return;
+            }
+
             setLoading(true);
             setError(null);
+
             try {
-                const res = await fetch(`${API_URL}/gemini-test`);
-                if (!res.ok) throw new Error("API呼び出し失敗");
+                const res = await apifetch(`${API_URL}/gemini-test`);
+                if (!res.ok) {
+                    const text = await res.text();
+                    console.error("API ERROR", res.status, text);
+                    throw new Error("API呼び出し失敗");
+                }
+
                 const data = await res.json();
                 setExcuse(data.excuse);
             } catch (e) {
                 console.error("fetchエラー", e);
-                if (e instanceof Error) {
-                    setError(e.message);
-                } else {
-                    setError(String(e));
-                }
+                setError(e instanceof Error ? e.message : String(e));
             } finally {
                 setLoading(false);
             }
-        }
-        fetchExcuse();
+        });
+
+        return () => unsubscribe();
     }, [API_URL]);
+
     return (
         <div>
             {/*loadingがtrueの時に表示*/}

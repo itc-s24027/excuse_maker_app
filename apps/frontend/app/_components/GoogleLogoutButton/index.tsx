@@ -1,3 +1,4 @@
+// Googleログアウトボタン
 "use client";
 
 import { signOut } from "firebase/auth";
@@ -10,7 +11,7 @@ export default function LogoutButton() {
 
     const logoutWithGoogle = async () => {
         await signOut(auth);
-        router.replace("/login");
+        router.push("/");
     };
 
     return (
