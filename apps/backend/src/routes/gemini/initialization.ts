@@ -2,12 +2,12 @@
 import {Router} from "express";
 import { isGeminiEnabled } from "../../config/geminiConfig.js";
 import { generateExcuse } from "../../services/excuse/generateExcuse.gemini.js";
-import { verifyFirebaseToken } from "../../middlewares/auth.js";
+import { authMiddleware } from "../../middlewares/auth/index.js";
 
 
 const router = Router();
 
-router.get("/gemini-test",verifyFirebaseToken, async (req, res) => {
+router.get("/gemini-test",authMiddleware, async (req, res) => {
     if (!isGeminiEnabled()) {
         return res.status(503).json({ message: "Geminiは有効になっていません" });
     }

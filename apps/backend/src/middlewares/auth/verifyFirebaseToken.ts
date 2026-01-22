@@ -1,7 +1,7 @@
 // Firebaseトークンを検証するミドルウェア
 // これをapiルートに適用して、認証されたユーザーのみがアクセスできるようする
 import type　{ Request, Response, NextFunction } from "express";
-import { getFirebaseAdmin } from "../config/firebaseAdmin.js";
+import { getFirebaseAdmin } from "../../config/firebaseAdmin.js";
 
 export interface AuthRequest extends Request {
     user: {

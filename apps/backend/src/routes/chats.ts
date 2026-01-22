@@ -1,6 +1,6 @@
 // 解説: URLと処理を紐付ける地図だ。
 import { Router } from "express";
-import { verifyFirebaseToken } from "../middlewares/auth.js";
+import { verifyFirebaseToken } from "../middlewares/auth/verifyFirebaseToken.js";
 import * as chatsController from "../controllers/chatsController.js";
 
 const router = Router();
