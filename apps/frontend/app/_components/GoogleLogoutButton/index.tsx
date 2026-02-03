@@ -11,7 +11,9 @@ export default function LogoutButton() {
 
     const logoutWithGoogle = async () => {
         await signOut(auth);
-        router.push("/");
+        // localStorage のトークンを削除
+        localStorage.removeItem("idToken");
+        router.push("/login");
     };
 
     return (
