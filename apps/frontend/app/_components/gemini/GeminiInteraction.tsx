@@ -10,20 +10,25 @@ export default function ExcuseComponent() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // バックエンドのAPIベースURLを環境変数から取得
     const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
     if (!API_URL) {
         throw new Error("No NEXT_PUBLIC_API_BASE_URLが設定されていません");
     }
 
+    // コンポーネントマウント時にAPIを呼び出して言い訳を取得
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 return;
             }
 
+            // API呼び出し開始
             setLoading(true);
+            // エラー状態リセット
             setError(null);
 
+            // API呼び出し
             try {
                 const res = await apifetch(`${API_URL}/gemini-test`);
                 if (!res.ok) {

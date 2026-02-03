@@ -11,9 +11,18 @@ router.get("/gemini-test",authMiddleware, async (req, res) => {
     if (!isGeminiEnabled()) {
         return res.status(503).json({ message: "Geminiは有効になっていません" });
     }
+
+    // クエリパラメータから situation を取得
+    const situation = typeof req.query.situation === "string" ? req.query.situation.trim() : "";
+
+    // situation が提供されていない場合はエラーを返す
+    if (!situation) {
+        return res.status(400).json({ message: "パラメータ 'situation' が必要です" });
+    }
+
     try {
         // services/excuseGenerator.jsで言い訳を生成して返す
-        const excuse = await generateExcuse("学校に遅刻しそう");
+        const excuse = await generateExcuse(situation);
         res.json({ excuse: excuse.text });
     } catch (err) {
         res.status(500).json({ message: "言い訳生成に失敗しました"});
