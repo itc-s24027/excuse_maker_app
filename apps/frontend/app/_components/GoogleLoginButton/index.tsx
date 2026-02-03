@@ -11,16 +11,14 @@ export default function GoogleLoginButton() {
 
     // Googleログイン処理
     const loginWithGoogle = async () => {
-        try {
+
             // ポップアップでGoogleログインを実行
+        try {
             const cred = await signInWithPopup(auth, provider);
-            // Firebase ユーザーから ID token を取得して localStorage に保存
             const token = await cred.user.getIdToken();
             localStorage.setItem("idToken", token);
-            // ログイン成功後、ホームページへリダイレクト
             router.replace("/");
         } catch (error) {
-            // エラーハンドリング
             console.error("ログイン失敗", error);
         }
     };
