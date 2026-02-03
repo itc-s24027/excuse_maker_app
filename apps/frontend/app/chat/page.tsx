@@ -31,24 +31,48 @@ export default function ChatPage() {
     ]);
   }, [selectedChat]);
 
+  // メッセージ追加ヘルパー
   const addMessage = (m: Message) => setMessages((s) => [...s, m]);
 
+  // プロンプト送信処理
   const sendPrompt = async () => {
-    if (!prompt.trim()) return;
-    const userMsg: Message = { id: String(Date.now()), role: "user", text: prompt };
-    addMessage(userMsg);
-    setPrompt("");
+    if (!prompt.trim()) return; // 空入力は無視
+
+    // ユーザーメッセージ追加
+    const userMsg: Message = { id: String(Date.now()), role: "user", text: prompt }; // 仮ID
+    addMessage(userMsg); // ユーザーメッセージ追加
+    setPrompt(""); // 入力欄クリア
+
+    // AI 呼び出し前の準備
+    const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (!API_URL) {
+      addMessage({ id: String(Date.now() + 2), role: "ai", text: "サーバーURLが未設定です" });
+      return;
+    }
 
     // AI 呼び出し（モックエンドポイント例）
     try {
       const token = localStorage.getItem("idToken") ?? "";
-      const res = await fetch("/api/gemini-test", {
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      const url = `${API_URL}/gemini-test?situation=${encodeURIComponent(userMsg.text)}`;
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}), // 認証ヘッダー
+        },
       });
+
+      // エラーハンドリング
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("API ERROR", res.status, text);
+        throw new Error("AI呼び出しに失敗しました");
+      }
+
       const data = await res.json();
       const aiText = data?.excuse ?? "AIの応答（モック）";
       addMessage({ id: String(Date.now() + 1), role: "ai", text: aiText });
     } catch (e) {
+      console.error("fetchエラー", e);
       addMessage({ id: String(Date.now() + 2), role: "ai", text: "AI呼び出しに失敗しました" });
     }
   };

@@ -2,8 +2,8 @@ import prisma from "../db/prismaClient.js";
 import { Prisma } from "@prisma/client";
 
 // 【切り替えスイッチ】テスト中は上のモックを使い、本番は下の本物をインポートする
-import { generateExcuseMock as generateExcuse } from "./excuse/generateExcuse.mock.js";
-// import { generateExcuse } from "./geminiService.js";
+// import { generateExcuseMock as generateExcuse } from "./excuse/generateExcuse.mock.js";
+import { generateExcuse } from "./excuse/generateExcuse.gemini.js";
 
 // チャット作成用入力型
 type CreateInput = {
