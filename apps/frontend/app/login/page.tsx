@@ -9,14 +9,6 @@ import LoginButton from "@/app/_components/GoogleLoginButton";
 
 export default function SignInPage() {
     const [user, loading] = useAuthState(auth);
-    const router = useRouter();
-
-    // ユーザーがログイン済みの場合、ホームにリダイレクト
-    useEffect(() => {
-        if (!loading && user) {
-            router.push("/");
-        }
-    }, [loading, user, router]);
 
     if (loading) {
         return <p>読み込み中...</p>;

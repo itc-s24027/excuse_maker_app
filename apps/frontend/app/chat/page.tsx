@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import LogoutButton from "@/app/_components/GoogleLogoutButton";
 import { apifetch } from "../lib/apiClient";
 
 /*
@@ -158,7 +159,8 @@ export default function ChatPage() {
           ))}
         </div>
         <div style={{ position: "absolute", bottom: 20 }}>
-          <button onClick={() => { localStorage.removeItem("idToken"); location.reload(); }}>ログアウト</button>
+          {/* ここを単純な localStorage 削除＋reload から Firebase signOut を行うコンポーネントに置換 */}
+          <LogoutButton />
         </div>
       </aside>
 
