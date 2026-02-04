@@ -1,9 +1,7 @@
-//
-import type { Response, NextFunction } from "express";
-import type { AuthRequest } from "./verifyFirebaseToken.js";
+import type { Request, Response, NextFunction } from "express";
 
 export const devAuth = (
-    req: AuthRequest,
+    req: Request,
     _res: Response,
     next: NextFunction
 ) => {

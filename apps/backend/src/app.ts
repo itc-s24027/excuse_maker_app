@@ -15,6 +15,7 @@ import init from "./routes/gemini/initialization.js";
 import init_mock from "./routes/gemini/initialization.mock.js"
 import setup from "./routes/proxy/setupProxy.js";
 import testRouter from "./routes/auth/test.js";
+import authRouter from "./routes/auth/user.js"
 
 const useMock = process.env.ENABLE_GEMINI !== "true";
 
@@ -28,6 +29,7 @@ app.use(express.json());
 app.use("/api", useMock ? init_mock : init);
 app.use("/api", setup);
 app.use("/api/test", testRouter);
+app.use("/api/auth", authRouter);
 
 // サーバーを起動してログをだす（待機状態にする）
 const port = process.env.PORT || '3001';

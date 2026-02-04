@@ -1,18 +1,19 @@
-// PrismaClientシングルトンラッパー
-
-// シングルトンパターンとは、
-// あるクラスのインスタンスがアプリケーション全体で
-// ただ一つしか存在しないことを保証するデザインパターン
-
 import { PrismaClient } from "@prisma/client";
 
-declare global {
-    // eslint-disable-next-line no-var
-    var __prisma: PrismaClient | undefined;
+import { PrismaPg } from '@prisma/adapter-pg'
+
+const globalForPrisma = global as unknown as {
+    prisma: PrismaClient
 }
 
-const prisma = global.__prisma ?? new PrismaClient();
+const adapter = new PrismaPg({
+    connectionString: process.env.DATABASE_URL,
+})
 
-if (process.env.NODE_ENV !== "production") global.__prisma = prisma;
+const prisma = globalForPrisma.prisma || new PrismaClient({
+    adapter,
+})
 
-export default prisma;
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+
+export default prisma

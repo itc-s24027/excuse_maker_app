@@ -3,17 +3,10 @@
 import type　{ Request, Response, NextFunction } from "express";
 import { getFirebaseAdmin } from "../../config/firebaseAdmin.js";
 
-export interface AuthRequest extends Request {
-    user: {
-        uid: string;
-        email?: string | undefined;
-        name?: string | undefined;
-    };
-}
 
 // Firebaseトークンを検証するミドルウェア
 export const verifyFirebaseToken = async (
-    req: AuthRequest,
+    req: Request,
     res: Response,
     next: NextFunction
 ) => {
@@ -35,8 +28,8 @@ export const verifyFirebaseToken = async (
         console.log("デコード成功");
         req.user = {
             uid: decoded.uid,
-            email: decoded.email,
-            name: decoded.name,
+            ...(decoded.email ? { email: decoded.email } : {}),
+            ...(decoded.name ? { name: decoded.name } : {}),
         };
         // 認証成功、次のミドルウェアまたはルートハンドラーへ
         next();
