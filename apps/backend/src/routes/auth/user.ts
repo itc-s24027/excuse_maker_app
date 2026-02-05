@@ -16,11 +16,33 @@ router.get("/me", (req: Request, res: Response) => {
 
 // ユーザー情報をDBに登録する===============================================================
 router.post("/register", authMiddleware, async (req, res) => {
+    console.log("=== REGISTER ===");
+    console.log("req.user =", JSON.stringify(req.user, null, 2));
+
+    console.log("req.user =", req.user);
+
+    const { uid, email, name } = req.user as any;
+
+    if (!uid) {
+        return res.status(400).json({
+            message: "uid が取得できません",
+            rawUser: req.user,
+        });
+    }
+
+    if (!email) {
+        return res.status(400).json({
+            message: "email が取得できません",
+            rawUser: req.user,
+        });
+    }
+
+
     if (!req.user) {
         return res.status(401).json({ message: "認証情報がありません" });
     }
 
-    const { uid, email, name } = req.user;
+    // const { uid, email, name } = req.user;
     try {
         const User = await prisma.user.findUnique({
             where: { uid },

@@ -3,13 +3,7 @@
 
 import React, { useEffect, useState } from "react";
 import LogoutButton from "@/app/_components/GoogleLogoutButton";
-
-/*
-  シンプルなチャット画面サンプル。
-  - 左: ChatList + Create ボタン（モーダル）
-  - 中央: ChatView (AI回答バブル、成功/失敗ボタン、プロンプト入力)
-  - 右: TagList
-*/
+import {getAuth} from "firebase/auth";
 
 type ChatSummary = { id: string; title: string };
 type Message = { id: string; role: "user" | "ai"; text: string };
@@ -35,6 +29,16 @@ export default function ChatPage() {
   // メッセージ追加ヘルパー
   const addMessage = (m: Message) => setMessages((s) => [...s, m]);
 
+  // 共通: API エンドポイント組み立て
+  const buildApiEndpoint = (path: string) => {
+    const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (!API_URL) throw new Error("サーバーURLが未設定です");
+    // /api が含まれているかを判定してエンドポイントを組み立てる
+    const base = API_URL.replace(/\/$/, "");
+    // path は先頭に '/' を含む想定
+    return base.endsWith("/api") ? `${base}${path}` : `${base}/api${path}`;
+  };
+
   // プロンプト送信処理
   const sendPrompt = async () => {
     if (!prompt.trim()) return; // 空入力は無視
@@ -44,23 +48,40 @@ export default function ChatPage() {
     addMessage(userMsg); // ユーザーメッセージ追加
     setPrompt(""); // 入力欄クリア
 
-    // AI 呼び出し前の準備
-    const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (!API_URL) {
-      addMessage({ id: String(Date.now() + 2), role: "ai", text: "サーバーURLが未設定です" });
-      return;
-    }
-
-    // AI 呼び出し（モックエンドポイント例）
     try {
-      const token = localStorage.getItem("idToken") ?? "";
-      const url = `${API_URL}/gemini-test?situation=${encodeURIComponent(userMsg.text)}`;
-      const res = await fetch(url, {
-        method: "GET",
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}), // 認証ヘッダー
-        },
-      });
+      const auth = getAuth();
+      const user = auth.currentUser;
+
+      // トークン取得: ユーザーが存在する場合は getIdToken を呼び出す
+      const getToken = async (force = false) => { // force: トークン強制再取得フラグ
+        // ユーザーが存在する場合は Firebase からトークン取得
+        if (user) return await user.getIdToken(force);
+        return localStorage.getItem("idToken") ?? "";
+      };
+
+      const endpoint = buildApiEndpoint("/gemini-test");  // エンドポイント組み立て
+      const url = `${endpoint}?situation=${encodeURIComponent(userMsg.text)}`;  // クエリパラメータ付与
+      console.log("AI endpoint =", url);
+
+      // 初回トークン取得
+      const fetchWithToken = async (forceRefresh = false) => {
+        const token = await getToken(forceRefresh);
+        return fetch(url, {
+          method: "GET",
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+      };
+
+      // 最初は強制リフレッシュで送る
+      let res = await fetchWithToken(true);
+
+      // 401 の場合はもう一度トークンを強制更新して再試行（1回だけ）
+      if (res.status === 401) {
+        console.warn("API 401 -> トークン再取得して再試行");
+        res = await fetchWithToken(true);
+      }
 
       // エラーハンドリング
       if (!res.ok) {
@@ -84,10 +105,14 @@ export default function ChatPage() {
   };
 
   const createChat = async (title: string, situation: string, tags: string[]) => {
-    // POST /api/chats の呼び出し例
     try {
-      const token = localStorage.getItem("idToken") ?? "";
-      const res = await fetch("/api/chats", {
+      const token = localStorage.getItem("idToken") ?? ""; // 認証トークン取得
+      const endpoint = buildApiEndpoint("/chats");        // エンドポイント組み立て
+
+      console.log("endpoint =", endpoint);
+
+      // POST リクエスト送信
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -95,7 +120,13 @@ export default function ChatPage() {
         },
         body: JSON.stringify({ title, situation, tags }),
       });
-      if (!res.ok) throw new Error("作成失敗");
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("createChat ERROR", res.status, text);
+        throw new Error("作成失敗");
+      }
+
       const data = await res.json();
       // 作成したチャットを一覧に追加して選択
       const newChat: ChatSummary = { id: data.chat?.id ?? String(Date.now()), title: data.chat?.title ?? title };
