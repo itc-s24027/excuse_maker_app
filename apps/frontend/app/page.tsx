@@ -23,17 +23,4 @@ export default function Home() {
     if (!user) return null; // リダイレクト中
 
     return <ChatPage />;
-    // return (
-    //     <main>
-    //         <h1>言い訳を生成</h1>
-    //         <p>
-    //             hello：
-    //             <strong>{user?.displayName}</strong>
-    //         </p>
-    //
-    //         <p>メールアドレス：{user?.email}</p>
-    //         <GeminiIntegration />
-    //         <LogoutButton />
-    //     </main>
-    // );
 }

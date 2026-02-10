@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import LogoutButton from "@/app/_components/GoogleLogoutButton";
+import LogoutButton from "@/app/_components/GoogleButton/logout";
 import { apifetch } from "../lib/apiClient";
 
 /*

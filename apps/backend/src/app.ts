@@ -29,7 +29,7 @@ app.use(express.json());
 app.use("/api", useMock ? init_mock : init);
 app.use("/api/chats", chatsRouter);
 app.use("/api/test", testRouter);
-app.use("/api/auth", authRouter);
+app.use("/api/user", authRouter);
 
 // サーバーを起動してログをだす（待機状態にする）
 const port = process.env.PORT || '3001';
