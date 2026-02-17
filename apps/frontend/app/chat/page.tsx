@@ -82,7 +82,7 @@ export default function ChatPage() {
     console.log("評価:", success);
   };
 
-  const createChat = async (title: string, situation: string, tags: string[]) => {
+  const createChat = async (title: string) => {
     // POST /api/chats の呼び出し例
     try {
       const token = localStorage.getItem("idToken") ?? "";
@@ -92,7 +92,7 @@ export default function ChatPage() {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ title, situation, tags }),
+        body: JSON.stringify({ title }),
       });
       if (!res.ok) throw new Error("作成失敗");
       const data = await res.json();
@@ -185,14 +185,15 @@ export default function ChatPage() {
 }
 
 /* Create モーダル（簡易） */
-function CreateModal({ onClose, onCreate }: { onClose: () => void; onCreate: (title: string, situation: string, tags: string[]) => void }) {
+function CreateModal({ onClose, onCreate }: { onClose: () => void; onCreate: (title: string) => void }) {
   const [title, setTitle] = useState("");
-  const [situation, setSituation] = useState("");
-  const [tagsText, setTagsText] = useState("");
 
   const submit = () => {
-    const tags = tagsText.split(",").map(t => t.trim()).filter(Boolean);
-    onCreate(title, situation, tags);
+    if (!title.trim()) {
+      alert("タイトルを入力してください");
+      return;
+    }
+    onCreate(title);
   };
 
   return (
@@ -205,14 +206,6 @@ function CreateModal({ onClose, onCreate }: { onClose: () => void; onCreate: (ti
         <div>
           <label>タイトル</label>
           <input value={title} onChange={(e) => setTitle(e.target.value)} style={{ width: "100%" }} />
-        </div>
-        <div>
-          <label>状況</label>
-          <textarea value={situation} onChange={(e) => setSituation(e.target.value)} style={{ width: "100%", height: 100 }} />
-        </div>
-        <div>
-          <label>タグ（カンマ区切り）</label>
-          <input value={tagsText} onChange={(e) => setTagsText(e.target.value)} style={{ width: "100%" }} />
         </div>
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 8 }}>
           <button onClick={onClose}>キャンセル</button>

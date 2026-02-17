@@ -8,10 +8,9 @@ import { z } from "zod";
 // チャット作成用スキーマ
 export const createChatSchema = z.object({
     title: z.string().min(1, "タイトルを入力してください").max(255),            // タイトル
-    situation: z.string().min(1, "状況を入力してください").max(5000),          // 状況
-    tags: z.array(z.string().min(1, "タグを一つ以上指定してください").max(36))   // タグ
 });
 
 export const evaluationSchema = z.object({
-    success: z.boolean().nullable() // true, false, または null（未評価）
+    excuseId: z.string().uuid(),
+    success: z.boolean(),
 });

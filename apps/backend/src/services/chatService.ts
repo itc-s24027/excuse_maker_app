@@ -1,77 +1,98 @@
 import prisma from "../db/prismaClient.js";
-import { Prisma } from "@prisma/client";
 
-// 【切り替えスイッチ】テスト中は上のモックを使い、本番は下の本物をインポートする
-// import { generateExcuseMock as generateExcuse } from "./excuse/generateExcuse.mock.js";
-import { generateExcuse } from "./excuse/generateExcuse.gemini.js";
-
-// チャット作成用入力型
-type CreateInput = {
-    userId: string;
+/**
+ * Chat 作成（＋最初の Excuse 作成）
+ */
+export async function createChat({
+                                     title,
+                                     userUid,
+                                 }: {
     title: string;
-    situation: string;
-    tags: string[];
-};
+    userUid: string;
+}) {
+    return prisma.$transaction(async (tx) => {
 
-// チャット作成
-export async function createChat(input: CreateInput) {
-    // 1. 言い訳を生成（モックまたは本物）
-    const result = await generateExcuse(input.situation);
+        const user = await tx.user.findUnique({
+            where: { uid: userUid },
+        });
 
-    // 2. トランザクションで保存
-    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+        if (!user) {
+            throw new Error("User not found for uid: " + userUid);
+        }
+
         const chat = await tx.chat.create({
             data: {
-                userId: input.userId,
-                title: input.title || input.situation.substring(0, 30),
+                title,
+                user: {
+                    connect: { id: user.id },
+                },
             },
         });
 
-        // タグの保存
-        const excuse = await tx.excuse.create({
-            data: {
-                chatId: chat.id,
-                situation: input.situation,
-                excuseText: result.text,
-            },
-        });
 
-        return { chat, excuse };
+        return { chat };
     });
 }
 
-// ユーザーのチャット一覧取得
-export async function getChatsByUser(userId: string) {
-    return prisma.chat.findMany({
-        where: { userId, isDelete: false },
-        include: { excuse: true },
+/**
+ * 指定ユーザーのチャット一覧を取得する（簡易）
+ */
+export async function getChatsByUser(userUid: string) {
+    const rows = await prisma.chat.findMany({
+        where: {
+            user: { uid: userUid },
+        },
         orderBy: { createdAt: "desc" },
+        select: {
+            id: true,
+            title: true,
+            createdAt: true,
+        },
     });
+    return rows;
 }
 
-// チャット詳細取得
-export async function getChatDetail(chatId: string) {
-    return prisma.chat.findUnique({
-        where: { id: chatId },
-        include: { excuse: true },
+/**
+ * チャット詳細を取得する（チャットとその言い訳一覧）
+ */
+export async function getChatDetail(chatId: string, userUid: string) {
+    const row = await prisma.chat.findFirst({
+        where: {
+            id: chatId,
+            user: { uid: userUid },
+        },
+        include: {
+            excuses: true,
+        },
     });
+    if (!row) throw new Error("Chat not found");
+    return row;
 }
 
-// 評価更新
-export async function updateEvaluation(params: { chatId: string; userId: string; success: boolean | null }) {
-    const excuse = await prisma.excuse.findFirst({ where: { chatId: params.chatId } });
-    if (!excuse) throw new Error("回答が見つかりません");
-
-    return await prisma.excuse.update({
-        where: { id: excuse.id },
-        data: { success: params.success },
+/**
+ * 言い訳（excuse）の評価を更新する
+ * input: { excuseId, success }
+ */
+export async function updateEvaluation({ excuseId, success }: { excuseId: string; success: boolean }) {
+    const updated = await prisma.excuse.update({
+        where: { id: excuseId },
+        data: { success },
     });
+    return updated;
 }
 
-// チャット削除（論理削除）
-export async function deleteChat(params: { chatId: string; userId: string }) {
-    await prisma.chat.update({
-        where: { id: params.chatId },
-        data: { isDelete: true }
+/**
+ * チャット削除（ユーザー所有チェックを行い、関連する言い訳を削除）
+ */
+export async function deleteChat({ chatId, userUid }: { chatId: string; userUid: string }) {
+    return prisma.$transaction(async (tx) => {
+        const chat = await tx.chat.findUnique({ where: { id: chatId }, include: { user: true } });
+        if (!chat) throw new Error("Chat not found");
+        // user relation からユーザー識別子を確認
+        if ((chat.user as any)?.uid && (chat.user as any).uid !== userUid) {
+            throw new Error("Forbidden");
+        }
+        await tx.excuse.deleteMany({ where: { chatId } });
+        await tx.chat.delete({ where: { id: chatId } });
     });
 }
