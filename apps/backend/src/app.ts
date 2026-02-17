@@ -13,8 +13,8 @@ process.env.DOTENV_LOADED = "true";
 
 import init from "./routes/gemini/initialization.js";
 import init_mock from "./routes/gemini/initialization.mock.js"
-import setup from "./routes/proxy/setupProxy.js";
 import testRouter from "./routes/auth/test.js";
+import chatsRouter from "./routes/chats.js";
 
 const useMock = process.env.ENABLE_GEMINI !== "true";
 
@@ -26,7 +26,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api", useMock ? init_mock : init);
-app.use("/api", setup);
+app.use("/api/chats", chatsRouter);
 app.use("/api/test", testRouter);
 
 // サーバーを起動してログをだす（待機状態にする）

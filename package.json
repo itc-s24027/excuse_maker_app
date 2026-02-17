@@ -10,10 +10,11 @@
     "lint": "turbo run lint"
   },
   "devDependencies": {
+    "@prisma/adapter-pg": "^7.4.0",
+    "@types/node": "^20",
+    "@types/pg": "^8.16.0",
+    "pg": "^8.18.0",
     "turbo": "latest",
-    "typescript": "^5",
-    "@types/node": "^20"
-  },
-  "dependencies": {
+    "typescript": "^5"
   }
 }

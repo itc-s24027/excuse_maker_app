@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { apifetch } from "../lib/apiClient";
 
 /*
   シンプルなチャット画面サンプル。
@@ -19,28 +20,43 @@ export default function ChatPage() {
     { id: "2", title: "履歴2" },
   ]);
   const [selectedChat, setSelectedChat] = useState<string | null>(chats[0]?.id ?? null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  // チャットID をキーにしてメッセージを管理
+  const [chatMessages, setChatMessages] = useState<Record<string, Message[]>>({});
   const [prompt, setPrompt] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [tags] = useState<string[]>(["遅刻", "学校", "仕事"]);
 
+  // 現在選択されているチャットのメッセージを取得
+  const messages = selectedChat ? (chatMessages[selectedChat] ?? []) : [];
+
   useEffect(() => {
-    // ダミーで既存の会話を読み込む
-    setMessages([
-      { id: "m1", role: "ai", text: "ようこそ。要望を入力してください" },
-    ]);
-  }, [selectedChat]);
+    // 新しいチャットが選択された時、初期メッセージを設定（まだない場合のみ）
+    if (selectedChat && !chatMessages[selectedChat]) {
+      setChatMessages((prev) => ({
+        ...prev,
+        [selectedChat]: [
+          { id: "m1", role: "ai", text: "ようこそ。要望を入力してください" },
+        ],
+      }));
+    }
+  }, [selectedChat, chatMessages]);
 
   // メッセージ追加ヘルパー
-  const addMessage = (m: Message) => setMessages((s) => [...s, m]);
+  const addMessage = (m: Message) => {
+    if (!selectedChat) return;
+    setChatMessages((prev) => ({
+      ...prev,
+      [selectedChat]: [...(prev[selectedChat] ?? []), m],
+    }));
+  };
 
   // プロンプト送信処理
   const sendPrompt = async () => {
-    if (!prompt.trim()) return; // 空入力は無視
+    if (!prompt.trim() || !selectedChat) return; // 空入力またはチャット未選択は無視
 
     // ユーザーメッセージ追加
-    const userMsg: Message = { id: String(Date.now()), role: "user", text: prompt }; // 仮ID
-    addMessage(userMsg); // ユーザーメッセージ追加
+    const userMsg: Message = { id: String(Date.now()), role: "user", text: prompt };
+    addMessage(userMsg);
     setPrompt(""); // 入力欄クリア
 
     // AI 呼び出し前の準備
@@ -50,15 +66,18 @@ export default function ChatPage() {
       return;
     }
 
-    // AI 呼び出し（モックエンドポイント例）
+    // AI 呼び出し（言い訳生成＋DB保存）
     try {
-      const token = localStorage.getItem("idToken") ?? "";
-      const url = `${API_URL}/gemini-test?situation=${encodeURIComponent(userMsg.text)}`;
-      const res = await fetch(url, {
-        method: "GET",
+      const url = `${API_URL}/gemini-test`;
+      const res = await apifetch(url, {
+        method: "POST",
         headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}), // 認証ヘッダー
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify({
+          chatId: selectedChat,
+          situation: userMsg.text,
+        }),
       });
 
       // エラーハンドリング
@@ -69,7 +88,7 @@ export default function ChatPage() {
       }
 
       const data = await res.json();
-      const aiText = data?.excuse ?? "AIの応答（モック）";
+      const aiText = data?.excuse ?? "AIの応答に失敗しました";
       addMessage({ id: String(Date.now() + 1), role: "ai", text: aiText });
     } catch (e) {
       console.error("fetchエラー", e);
@@ -85,25 +104,34 @@ export default function ChatPage() {
   const createChat = async (title: string) => {
     // POST /api/chats の呼び出し例
     try {
-      const token = localStorage.getItem("idToken") ?? "";
-      const res = await fetch("/api/chats", {
+      const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+      const fullUrl = `${API_URL}/chats`;
+
+      const res = await apifetch(fullUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ title }),
       });
-      if (!res.ok) throw new Error("作成失敗");
-      const data = await res.json();
+
+      const text = await res.text();
+      console.log("Response status:", res.status);
+      console.log("Response body:", text);
+
+      if (!res.ok) {
+        throw new Error(`API Error ${res.status}: ${text}`);
+      }
+
+      const data = JSON.parse(text);
       // 作成したチャットを一覧に追加して選択
       const newChat: ChatSummary = { id: data.chat?.id ?? String(Date.now()), title: data.chat?.title ?? title };
       setChats((s) => [newChat, ...s]);
       setSelectedChat(newChat.id);
       setShowCreate(false);
     } catch (err) {
-      console.error(err);
-      alert("チャット作成に失敗しました");
+      console.error("チャット作成エラー:", err);
+      alert("チャット作成に失敗しました: " + String(err));
     }
   };
 
