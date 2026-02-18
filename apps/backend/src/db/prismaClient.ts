@@ -14,7 +14,8 @@ const __dirname = path.dirname(__filename);
 // .env を確実に読み込む
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
-import { PrismaClient } from "@prisma/client";
+// import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "./../../src/lib/generated/prisma/index.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
