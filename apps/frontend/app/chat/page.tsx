@@ -58,7 +58,7 @@ export default function ChatPage() {
     // ユーザーメッセージ追加
     const userMsg: Message = { id: String(Date.now()), role: "user", text: prompt };
     addMessage(userMsg);
-    setPrompt(""); // 入力欄クリア
+    // setPrompt(""); // 入力欄クリアを削除 - プロンプトを残すように変更
 
     // AI 呼び出し前の準備
     const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
