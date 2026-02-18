@@ -43,9 +43,12 @@ export default function ChatPage() {
   const currentAnswerGroup = currentGroupIdx >= 0 ? answerHistory[currentGroupIdx] : null;
   // 削除されていない回答のみを取得
   const validAnswers = currentAnswerGroup ? currentAnswerGroup.answers.filter(a => !a.deleted) : [];
-  // 現在表示されている回答を取得
-  const currentAnswerInGroup = currentAnswerGroup ? currentAnswerGroup.answers.findIndex(a => !a.deleted) : -1;
-  const currentAnswer = currentAnswerInGroup >= 0 ? validAnswers[0] : null;
+  // 現在表示されている回答を取得：currentAnswerGroup内のcurrentIndexで指定された回答を表示
+  // ただし、currentIndexはallAnswersのインデックスなので、validAnswersとのマッピングが必要
+  const currentAnswerIndex = currentAnswerGroup ? currentAnswerGroup.currentIndex : -1;
+  const currentAnswer = currentAnswerGroup && currentAnswerIndex >= 0 && currentAnswerIndex < currentAnswerGroup.answers.length
+    ? (currentAnswerGroup.answers[currentAnswerIndex].deleted ? null : currentAnswerGroup.answers[currentAnswerIndex])
+    : (validAnswers.length > 0 ? validAnswers[validAnswers.length - 1] : null);
 
   useEffect(() => {
     // 新しいチャットが選択された時、初期メッセージを設定（まだない場合のみ）
@@ -102,6 +105,16 @@ export default function ChatPage() {
         // チャットリストに追加して選択
         setChats((prev) => [newChat, ...prev]);
         setSelectedChat(newChat.id);
+
+        // 「temp-chat」に保存されたプロンプトを新しいチャットに移動
+        const tempPrompt = chatPrompts["temp-chat"] ?? prompt;
+        setChatPrompts((prev) => {
+          const updated = { ...prev };
+          delete updated["temp-chat"]; // temp-chatを削除
+          updated[newChat.id] = tempPrompt; // 新しいチャットにプロンプトを保存
+          return updated;
+        });
+
         chatId = newChat.id;
       } catch (err) {
         console.error("チャット作成エラー:", err);
@@ -242,7 +255,7 @@ export default function ChatPage() {
 
   // 他の回答をもらう処理
   const getAnotherAnswer = async () => {
-    if (!prompt.trim() || !selectedChat || loading || !currentAnswerGroup) return;
+    if (!prompt.trim() || loading || !currentAnswerGroup || !selectedChat) return;
 
     setLoading(true);
 
@@ -281,7 +294,12 @@ export default function ChatPage() {
         if (groupIndex >= 0 && groupIndex < history.length) {
           const group = history[groupIndex];
           const newAnswers = [...group.answers, { text: aiText, deleted: false, success: false }];
-          history[groupIndex] = { ...group, answers: newAnswers };
+          // 新しい回答を追加し、currentIndexを最新の回答に更新
+          history[groupIndex] = {
+            ...group,
+            answers: newAnswers,
+            currentIndex: newAnswers.length - 1 // 最新の回答を指す
+          };
         }
         return { ...prev, [selectedChat!]: history };
       });
@@ -296,12 +314,14 @@ export default function ChatPage() {
   const showPreviousAnswer = () => {
     if (!currentAnswerGroup || validAnswers.length <= 1) return;
 
-    const currentValidIndex = currentAnswerGroup.answers.findIndex(a => !a.deleted);
-    if (currentValidIndex <= 0) return;
+    const currentIdx = currentAnswerGroup.currentIndex;
+    console.log("showPreviousAnswer: currentIdx =", currentIdx, "validAnswers.length =", validAnswers.length, "answers.length =", currentAnswerGroup.answers.length);
 
-    // 前の削除されていない回答を探す
-    for (let i = currentValidIndex - 1; i >= 0; i--) {
+    // 現在のインデックスより前に削除されていない回答があるか確認
+    let found = false;
+    for (let i = currentIdx - 1; i >= 0; i--) {
       if (!currentAnswerGroup.answers[i].deleted) {
+        console.log("showPreviousAnswer: found deleted=false at index", i);
         setChatAnswerHistory((prev) => {
           const history = [...(prev[selectedChat!] ?? [])];
           const groupIndex = currentGroupIdx;
@@ -310,8 +330,12 @@ export default function ChatPage() {
           }
           return { ...prev, [selectedChat!]: history };
         });
+        found = true;
         return;
       }
+    }
+    if (!found) {
+      console.log("showPreviousAnswer: no previous answer found");
     }
   };
 
@@ -319,12 +343,14 @@ export default function ChatPage() {
   const showNextAnswer = () => {
     if (!currentAnswerGroup || validAnswers.length <= 1) return;
 
-    const currentValidIndex = currentAnswerGroup.answers.findIndex(a => !a.deleted);
-    if (currentValidIndex >= currentAnswerGroup.answers.length - 1) return;
+    const currentIdx = currentAnswerGroup.currentIndex;
+    console.log("showNextAnswer: currentIdx =", currentIdx, "validAnswers.length =", validAnswers.length, "answers.length =", currentAnswerGroup.answers.length);
 
-    // 次の削除されていない回答を探す
-    for (let i = currentValidIndex + 1; i < currentAnswerGroup.answers.length; i++) {
+    // 現在のインデックスより後に削除されていない回答があるか確認
+    let found = false;
+    for (let i = currentIdx + 1; i < currentAnswerGroup.answers.length; i++) {
       if (!currentAnswerGroup.answers[i].deleted) {
+        console.log("showNextAnswer: found deleted=false at index", i);
         setChatAnswerHistory((prev) => {
           const history = [...(prev[selectedChat!] ?? [])];
           const groupIndex = currentGroupIdx;
@@ -333,8 +359,12 @@ export default function ChatPage() {
           }
           return { ...prev, [selectedChat!]: history };
         });
+        found = true;
         return;
       }
+    }
+    if (!found) {
+      console.log("showNextAnswer: no next answer found");
     }
   };
 
@@ -503,35 +533,37 @@ export default function ChatPage() {
             }}>
               <button
                 onClick={showPreviousAnswer}
-                disabled={validAnswers.length <= 1}
+                disabled={!currentAnswerGroup || validAnswers.length <= 1}
                 style={{
                   padding: "8px 14px",
                   fontSize: "0.9rem",
                   fontWeight: "600",
-                  color: "#fff",
-                  background: "#665440",
+                  color: !currentAnswerGroup || validAnswers.length <= 1 ? "#ccc" : "#fff",
+                  background: !currentAnswerGroup || validAnswers.length <= 1 ? "#ddd" : "#665440",
                   border: "none",
                   borderRadius: "8px",
-                  cursor: "pointer",
+                  cursor: !currentAnswerGroup || validAnswers.length <= 1 ? "not-allowed" : "pointer",
                 }}
               >
                 前の回答
               </button>
               <span style={{ fontSize: 14, color: "#9a6044", fontWeight: "600" }}>
-                {validAnswers.length}件の回答
+                {currentAnswerIndex >= 0 && currentAnswerIndex < currentAnswerGroup.answers.length
+                  ? `${currentAnswerGroup.answers.slice(0, currentAnswerIndex + 1).filter(a => !a.deleted).length}/${validAnswers.length}`
+                  : `1/${validAnswers.length}`}
               </span>
               <button
                 onClick={showNextAnswer}
-                disabled={validAnswers.length <= 1}
+                disabled={!currentAnswerGroup || validAnswers.length <= 1}
                 style={{
                   padding: "8px 14px",
                   fontSize: "0.9rem",
                   fontWeight: "600",
-                  color: "#fff",
-                  background: "#665440",
+                  color: !currentAnswerGroup || validAnswers.length <= 1 ? "#ccc" : "#fff",
+                  background: !currentAnswerGroup || validAnswers.length <= 1 ? "#ddd" : "#665440",
                   border: "none",
                   borderRadius: "8px",
-                  cursor: "pointer",
+                  cursor: !currentAnswerGroup || validAnswers.length <= 1 ? "not-allowed" : "pointer",
                 }}
               >
                 次の回答
@@ -745,14 +777,14 @@ export default function ChatPage() {
                         marginBottom: 6,
                         fontWeight: "600",
                       }}>
-                        <strong>Q:</strong> {group.prompt.substring(0, 30)}...
+                        <strong>状況: </strong> {group.prompt.substring(0, 30)}
                       </div>
                       <div style={{
                         fontSize: 13,
                         lineHeight: 1.4,
                         color: idx === currentGroupIdx ? "rgba(255,255,255,0.95)" : "#665440",
                       }}>
-                        <strong>A:</strong> {successAnswer.text.substring(0, 60)}...
+                        <strong>回答: </strong> {successAnswer.text.substring(0, 60)}
                       </div>
                     </div>
                   ) : null;
@@ -930,7 +962,7 @@ function CreateModal({ onClose, onCreate, isFirstChat }: { onClose: () => void; 
               e.currentTarget.style.borderColor = "#c3af96";
             }}
           >
-            {isFirstChat ? "スキップ" : "キャンセル"}
+            {isFirstChat ? "キャンセル" : "キャンセル"}
           </button>
           <button
             onClick={submit}
