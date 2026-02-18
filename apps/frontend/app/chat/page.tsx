@@ -14,6 +14,7 @@ import { apifetch } from "../lib/apiClient";
 
 type ChatSummary = { id: string; title: string };
 type Message = { id: string; role: "user" | "ai"; text: string };
+type AnswerGroup = { promptId: string; answers: string[]; currentIndex: number };
 
 export default function ChatPage() {
   const [chats, setChats] = useState<ChatSummary[]>([]);
@@ -22,13 +23,20 @@ export default function ChatPage() {
   const [chatMessages, setChatMessages] = useState<Record<string, Message[]>>({});
   // チャットID をキーにしてプロンプトを管理
   const [chatPrompts, setChatPrompts] = useState<Record<string, string>>({});
+  // チャットID をキーにして回答グループを管理
+  const [chatAnswerGroups, setChatAnswerGroups] = useState<Record<string, AnswerGroup>>({});
   const [showCreate, setShowCreate] = useState(true); // 画面読み込み時に自動表示
   const [tags] = useState<string[]>(["遅刻", "学校", "仕事"]);
+  const [loading, setLoading] = useState(false);
 
   // 現在選択されているチャットのメッセージを取得
   const messages = selectedChat ? (chatMessages[selectedChat] ?? []) : [];
   // 現在選択されているチャットのプロンプトを取得
   const prompt = selectedChat ? (chatPrompts[selectedChat] ?? "") : "";
+  // 現在選択されているチャットの回答グループを取得
+  const answerGroup = selectedChat ? (chatAnswerGroups[selectedChat] ?? null) : null;
+  // 現在表示されている回答を取得
+  const currentAnswer = answerGroup ? answerGroup.answers[answerGroup.currentIndex] : null;
 
   useEffect(() => {
     // 新しいチャットが選択された時、初期メッセージを設定（まだない場合のみ）
@@ -55,15 +63,18 @@ export default function ChatPage() {
   const sendPrompt = async () => {
     if (!prompt.trim() || !selectedChat) return; // 空入力またはチャット未選択は無視
 
+    setLoading(true);
+
     // ユーザーメッセージ追加
     const userMsg: Message = { id: String(Date.now()), role: "user", text: prompt };
     addMessage(userMsg);
-    // setPrompt(""); // 入力欄クリアを削除 - プロンプトを残すように変更
+    const promptId = String(Date.now());
 
     // AI 呼び出し前の準備
     const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
     if (!API_URL) {
       addMessage({ id: String(Date.now() + 2), role: "ai", text: "サーバーURLが未設定です" });
+      setLoading(false);
       return;
     }
 
@@ -90,16 +101,112 @@ export default function ChatPage() {
 
       const data = await res.json();
       const aiText = data?.excuse ?? "AIの応答に失敗しました";
+
+      // 回答グループを作成・更新
+      setChatAnswerGroups((prev) => ({
+        ...prev,
+        [selectedChat]: {
+          promptId,
+          answers: [aiText],
+          currentIndex: 0,
+        },
+      }));
+
       addMessage({ id: String(Date.now() + 1), role: "ai", text: aiText });
     } catch (e) {
       console.error("fetchエラー", e);
-      addMessage({ id: String(Date.now() + 2), role: "ai", text: "AI呼び出しに失敗しました" });
+      const errorMsg = "AI呼び出しに失敗しました";
+      addMessage({ id: String(Date.now() + 2), role: "ai", text: errorMsg });
+    } finally {
+      setLoading(false);
     }
   };
 
   const markEvaluation = async (success: boolean | null) => {
     // ここでは最新の AI 回答を評価する（API 呼び出しは省略）
     console.log("評価:", success);
+  };
+
+  // 他の回答をもらう処理
+  const getAnotherAnswer = async () => {
+    if (!prompt.trim() || !selectedChat || loading) return;
+
+    setLoading(true);
+
+    const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (!API_URL) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const url = `${API_URL}/gemini-test`;
+      const res = await apifetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chatId: selectedChat,
+          situation: prompt,
+        }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("API ERROR", res.status, text);
+        throw new Error("AI呼び出しに失敗しました");
+      }
+
+      const data = await res.json();
+      const aiText = data?.excuse ?? "AIの応答に失敗しました";
+
+      // 回答グループに新しい回答を追加
+      setChatAnswerGroups((prev) => {
+        const current = prev[selectedChat];
+        if (!current) return prev;
+
+        const newAnswers = [...current.answers, aiText];
+        return {
+          ...prev,
+          [selectedChat]: {
+            ...current,
+            answers: newAnswers,
+            currentIndex: newAnswers.length - 1, // 最新の回答に移動
+          },
+        };
+      });
+    } catch (e) {
+      console.error("fetchエラー", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 前の回答を表示
+  const showPreviousAnswer = () => {
+    if (!answerGroup || answerGroup.currentIndex <= 0) return;
+
+    setChatAnswerGroups((prev) => ({
+      ...prev,
+      [selectedChat!]: {
+        ...answerGroup,
+        currentIndex: answerGroup.currentIndex - 1,
+      },
+    }));
+  };
+
+  // 次の回答を表示
+  const showNextAnswer = () => {
+    if (!answerGroup || answerGroup.currentIndex >= answerGroup.answers.length - 1) return;
+
+    setChatAnswerGroups((prev) => ({
+      ...prev,
+      [selectedChat!]: {
+        ...answerGroup,
+        currentIndex: answerGroup.currentIndex + 1,
+      },
+    }));
   };
 
   const createChat = async (title: string) => {
@@ -169,16 +276,44 @@ export default function ChatPage() {
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <div style={{ marginBottom: 12 }}>
             <h2>AIの回答</h2>
-            {messages.filter(m => m.role === "ai").slice(-1).map(m => (
+            {currentAnswer ? (
+              <div key="current-answer" style={{ padding: 20, background: "#fff", borderRadius: 16, fontSize: 20 }}>
+                {currentAnswer}
+              </div>
+            ) : messages.filter(m => m.role === "ai").slice(-1).map(m => (
               <div key={m.id} style={{ padding: 20, background: "#fff", borderRadius: 16, fontSize: 20 }}>
                 {m.text}
               </div>
             ))}
           </div>
 
+          {/* 回答ナビゲーション */}
+          {answerGroup && answerGroup.answers.length > 0 && (
+            <div style={{ display: "flex", gap: 12, margin: "12px 0", alignItems: "center" }}>
+              <button
+                onClick={showPreviousAnswer}
+                disabled={answerGroup.currentIndex === 0}
+              >
+                前の回答
+              </button>
+              <span style={{ fontSize: 14, color: "#666" }}>
+                {answerGroup.currentIndex + 1} / {answerGroup.answers.length}
+              </span>
+              <button
+                onClick={showNextAnswer}
+                disabled={answerGroup.currentIndex === answerGroup.answers.length - 1}
+              >
+                次の回答
+              </button>
+            </div>
+          )}
+
           <div style={{ display: "flex", gap: 12, margin: "12px 0" }}>
             <button onClick={() => markEvaluation(true)}>成功</button>
             <button onClick={() => markEvaluation(false)}>失敗</button>
+            <button onClick={getAnotherAnswer} disabled={loading || !answerGroup}>
+              {loading ? "生成中..." : "他の回答をもらう"}
+            </button>
           </div>
 
           <div style={{ marginTop: 24 }}>
@@ -197,7 +332,9 @@ export default function ChatPage() {
               placeholder="要望や状況を入力して AI に相談"
             />
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
-              <button onClick={sendPrompt}>送信</button>
+              <button onClick={sendPrompt} disabled={loading}>
+                {loading ? "送信中..." : "送信"}
+              </button>
             </div>
           </div>
         </div>
