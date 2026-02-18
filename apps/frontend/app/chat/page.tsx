@@ -3,6 +3,7 @@
 
 import React, { useEffect, useState } from "react";
 import LogoutButton from "@/app/_components/GoogleButton/logout";
+import SaveExcuseModal from "@/app/_components/chat/SaveExcuseModal";
 import { apifetch } from "../lib/apiClient";
 
 /*
@@ -14,6 +15,7 @@ import { apifetch } from "../lib/apiClient";
 
 type ChatSummary = { id: string; title: string };
 type Message = { id: string; role: "user" | "ai"; text: string };
+type Tag = { title: string; isSystemTag?: boolean };
 
 export default function ChatPage() {
   const [chats, setChats] = useState<ChatSummary[]>([
@@ -25,7 +27,15 @@ export default function ChatPage() {
   const [chatMessages, setChatMessages] = useState<Record<string, Message[]>>({});
   const [prompt, setPrompt] = useState("");
   const [showCreate, setShowCreate] = useState(false);
-  const [tags] = useState<string[]>(["遅刻", "学校", "仕事"]);
+  const [tags] = useState<Tag[]>([
+    { title: "遅刻", isSystemTag: false },
+    { title: "学校", isSystemTag: false },
+    { title: "仕事", isSystemTag: false },
+  ]);
+
+  // SaveExcuseModal 用の状態
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [lastExcuseText, setLastExcuseText] = useState("");
 
   // 現在選択されているチャットのメッセージを取得
   const messages = selectedChat ? (chatMessages[selectedChat] ?? []) : [];
@@ -98,8 +108,24 @@ export default function ChatPage() {
   };
 
   const markEvaluation = async (success: boolean | null) => {
-    // ここでは最新の AI 回答を評価する（API 呼び出しは省略）
-    console.log("評価:", success);
+    if (success === true) {
+      // 最新の AI 回答を取得
+      const lastAiMessage = messages.filter(m => m.role === "ai").slice(-1)[0];
+      if (lastAiMessage) {
+        setLastExcuseText(lastAiMessage.text);
+        setShowSaveModal(true);
+      }
+    } else if (success === false) {
+      // 失敗の場合は評価を送信
+      console.log("評価: 失敗");
+    }
+  };
+
+  // SaveExcuseModal から保存処理
+  const handleSaveExcuse = async (selectedTags: string[]) => {
+    console.log("言い訳を保存:", { excuse: lastExcuseText, tags: selectedTags });
+    // ここで API に保存する処理を追加
+    setShowSaveModal(false);
   };
 
   const createChat = async (title: string) => {
@@ -201,7 +227,9 @@ export default function ChatPage() {
         <h4>タグ一覧</h4>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {tags.map((t) => (
-            <div key={t} style={{ background: "#fff", padding: 8, borderRadius: 8 }}>{t}</div>
+            <div key={t.title} style={{ background: "#fff", padding: 8, borderRadius: 8 }}>
+              <span>{t.title}</span>
+            </div>
           ))}
         </div>
       </aside>
@@ -210,6 +238,15 @@ export default function ChatPage() {
       {showCreate && (
         <CreateModal onClose={() => setShowCreate(false)} onCreate={createChat} />
       )}
+
+      {/* Save Excuse モーダル */}
+      <SaveExcuseModal
+        isOpen={showSaveModal}
+        excuseText={lastExcuseText}
+        onClose={() => setShowSaveModal(false)}
+        onSave={handleSaveExcuse}
+        availableTags={tags}
+      />
     </div>
   );
 }
