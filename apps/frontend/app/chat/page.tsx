@@ -3,6 +3,7 @@
 
 import React, { useEffect, useState } from "react";
 import LogoutButton from "@/app/_components/GoogleButton/logout";
+import SaveExcuseModal from "@/app/_components/chat/SaveExcuseModal";
 import { apifetch } from "../lib/apiClient";
 
 /*
@@ -16,6 +17,8 @@ type ChatSummary = { id: string; title: string };
 type Message = { id: string; role: "user" | "ai"; text: string };
 type Answer = { text: string; deleted: boolean; success: boolean };
 type AnswerGroup = { promptId: string; prompt: string; answers: Answer[]; currentIndex: number };
+type Tag = { title: string; isSystemTag?: boolean };
+type AnswerGroup = { promptId: string; answers: string[]; currentIndex: number };
 
 export default function ChatPage() {
   const [chats, setChats] = useState<ChatSummary[]>([]);
@@ -818,6 +821,15 @@ export default function ChatPage() {
           isFirstChat={chats.length === 0}
         />
       )}
+
+      {/* Save Excuse モーダル */}
+      <SaveExcuseModal
+        isOpen={showSaveModal}
+        excuseText={lastExcuseText}
+        onClose={() => setShowSaveModal(false)}
+        onSave={handleSaveExcuse}
+        availableTags={tags}
+      />
     </div>
   );
 }

@@ -28,7 +28,7 @@ model User {
 
 model Chat {
   id        String   @id @default(uuid(7)) @db.VarChar(36)
-  userId    String   @db.VarChar(36) //FK
+  userId    String   @db.VarChar(36) // FK
   title     String?  @db.VarChar(255)
   createdAt DateTime @default(now())
   isShared  Boolean  @default(false)
@@ -42,7 +42,7 @@ model Chat {
 
 model Excuse {
   id         String   @id @default(uuid(7)) @db.VarChar(36)
-  chatId     String   @db.VarChar(36) //FK
+  chatId     String   @db.VarChar(36) // FK
   situation  String   @default("") @db.Text
   excuseText String   @db.Text
   success    Boolean?
@@ -56,29 +56,30 @@ model Excuse {
 }
 
 model Tag {
-  id        String   @id @default(uuid(7)) @db.VarChar(36)
-  title     String   @unique @db.VarChar(36)
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid(7)) @db.VarChar(36)
+  title       String   @unique @db.VarChar(36)
+  isSystemTag Boolean  @default(false)
+  createdAt   DateTime @default(now())
 
   // リレーション
   excuses ExcuseTag[]
 }
 
 model ExcuseTag {
-  excuseId String @db.VarChar(36) //FK
-  tagId    String @db.VarChar(36) //FK
+  excuseId String @db.VarChar(36) // FK
+  tagId    String @db.VarChar(36) // FK
 
   // リレーション
   excuse Excuse @relation(fields: [excuseId], references: [id])
   tag    Tag    @relation(fields: [tagId], references: [id])
 
-  @@id([excuseId, tagId]) //複合主キー
+  @@id([excuseId, tagId]) // 複合主キー
 }
 
 model Like {
   id        String   @id @default(uuid(7)) @db.VarChar(36)
-  userId    String   @db.VarChar(36) //FK
-  excuseId  String   @db.VarChar(36) //FK
+  userId    String   @db.VarChar(36) // FK
+  excuseId  String   @db.VarChar(36) // FK
   createdAt DateTime @default(now())
   isDeleted Boolean  @default(false)
 
