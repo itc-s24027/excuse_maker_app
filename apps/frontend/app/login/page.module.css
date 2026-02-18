@@ -1,0 +1,219 @@
+/* ===========================
+   最上位コンテナ
+   =========================== */
+.loginContainer {
+    font-family: 'Noto Sans JP', sans-serif;
+    width: 100vw;
+    height: 100vh;
+    background-image: url('/login.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: slideIn 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    position: relative;
+    overflow: hidden;
+    /*gap: 6rem;*/
+    padding: 3rem;
+}
+
+/* 猫のイラスト */
+.catIllustration {
+    width: 500px;
+    height: 400px;
+    background-image: url('/nekoirasuto1.png');
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    flex-shrink: 0;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===========================
+   フォームエリア
+   =========================== */
+.formSection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: 500px;
+    width: 100%;
+    text-align: center;
+}
+
+.formHeader {
+    margin-bottom: 2rem;
+    text-align: center;
+    width: 100%;
+}
+
+.formHeader h1 {
+    font-family: 'Nunito', sans-serif;
+    font-size: 4rem;
+    font-weight: 800;
+    color: #665440;
+    letter-spacing: -1px;
+    position: relative;
+    display: inline-block;
+    line-height: 1.1;
+    margin-bottom: 0.5rem;
+}
+
+.formHeader h1::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    height: 4px;
+    background: linear-gradient(90deg, #eec8ae, #9a6044);
+    border-radius: 2px;
+}
+
+.formHeader p {
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: #665440;
+    margin-bottom: 10px;
+    padding-top: 30px;
+}
+
+.googleBtn {
+    padding: 16px 32px;
+    border: 3px solid #c3af96;
+    border-radius: 12px;
+    background: #fff6e9;
+    color: #665440;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    font-size: 1.5rem;
+    font-weight: 600;
+    font-family: 'Noto Sans JP', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 13px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    min-width: 200px;
+}
+
+.googleBtn:hover {
+    background: #dfc9ab;
+    border-color: #c2a98b;
+    color: #665440;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.googleBtn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.googleBtn svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+/* ===========================
+   レスポンシブ
+   =========================== */
+@media (max-width: 1024px) {
+    .loginContainer {
+        flex-direction: column;
+        gap: 2rem;
+        padding: 2rem;
+    }
+
+    .catIllustration {
+        width: 300px;
+        height: 300px;
+    }
+
+    .formSection {
+        align-items: center;
+        text-align: center;
+    }
+
+    .formHeader {
+        text-align: center;
+    }
+
+    .formHeader h1::after {
+        left: 50%;
+        transform: translateX(-50%);
+    }
+}
+
+@media (max-width: 768px) {
+    .loginContainer {
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 1.5rem;
+    }
+
+    .catIllustration {
+        width: 250px;
+        height: 250px;
+    }
+
+    .formSection {
+        align-items: center;
+        text-align: center;
+        max-width: none;
+    }
+
+    .formHeader {
+        text-align: center;
+    }
+
+    .formHeader h1 {
+        font-size: 2.5rem;
+    }
+
+    .formHeader h1::after {
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .formHeader p {
+        font-size: 1rem;
+    }
+
+    .googleBtn {
+        padding: 14px 28px;
+        font-size: 1rem;
+        min-width: 180px;
+    }
+}
+
+@media (max-width: 480px) {
+    .loginContainer {
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .catIllustration {
+        width: 200px;
+        height: 200px;
+    }
+
+    .formHeader h1 {
+        font-size: 2rem;
+    }
+
+    .googleBtn {
+        padding: 12px 24px;
+        font-size: 0.95rem;
+        min-width: 160px;
+    }
+}

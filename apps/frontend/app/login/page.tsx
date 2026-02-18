@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useEffect } from "react";
 import LoginButton from "@/app/_components/GoogleButton/login";
+import styles from "./page.module.css";
 
 export default function SignInPage() {
     const [user, loading] = useAuthState(auth);
@@ -26,10 +27,16 @@ export default function SignInPage() {
     if (user) return null; // リダイレクト中
 
     return (
-        <>
-            <h1>ログイン</h1>
-            <p>ログインしてください</p>
-            <LoginButton />
-        </>
+        <div className={styles.loginContainer}>
+            <div className={styles.catIllustration}></div>
+            <div className={styles.formSection}>
+                <div className={styles.formHeader}>
+                    <h1>Login</h1>
+                    <p>こちらからログインしてください</p>
+                </div>
+
+                <LoginButton />
+            </div>
+        </div>
     );
 }
