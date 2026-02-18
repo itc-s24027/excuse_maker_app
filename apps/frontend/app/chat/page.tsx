@@ -16,19 +16,19 @@ type ChatSummary = { id: string; title: string };
 type Message = { id: string; role: "user" | "ai"; text: string };
 
 export default function ChatPage() {
-  const [chats, setChats] = useState<ChatSummary[]>([
-    { id: "1", title: "履歴1" },
-    { id: "2", title: "履歴2" },
-  ]);
-  const [selectedChat, setSelectedChat] = useState<string | null>(chats[0]?.id ?? null);
+  const [chats, setChats] = useState<ChatSummary[]>([]);
+  const [selectedChat, setSelectedChat] = useState<string | null>(null);
   // チャットID をキーにしてメッセージを管理
   const [chatMessages, setChatMessages] = useState<Record<string, Message[]>>({});
-  const [prompt, setPrompt] = useState("");
-  const [showCreate, setShowCreate] = useState(false);
+  // チャットID をキーにしてプロンプトを管理
+  const [chatPrompts, setChatPrompts] = useState<Record<string, string>>({});
+  const [showCreate, setShowCreate] = useState(true); // 画面読み込み時に自動表示
   const [tags] = useState<string[]>(["遅刻", "学校", "仕事"]);
 
   // 現在選択されているチャットのメッセージを取得
   const messages = selectedChat ? (chatMessages[selectedChat] ?? []) : [];
+  // 現在選択されているチャットのプロンプトを取得
+  const prompt = selectedChat ? (chatPrompts[selectedChat] ?? "") : "";
 
   useEffect(() => {
     // 新しいチャットが選択された時、初期メッセージを設定（まだない場合のみ）
@@ -185,7 +185,14 @@ export default function ChatPage() {
             <div style={{ marginBottom: 8 }}>プロンプト</div>
             <textarea
               value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
+              onChange={(e) => {
+                if (selectedChat) {
+                  setChatPrompts((prev) => ({
+                    ...prev,
+                    [selectedChat]: e.target.value,
+                  }));
+                }
+              }}
               style={{ width: "100%", height: 140, borderRadius: 12, padding: 12 }}
               placeholder="要望や状況を入力して AI に相談"
             />
@@ -208,14 +215,18 @@ export default function ChatPage() {
 
       {/* Create モーダル */}
       {showCreate && (
-        <CreateModal onClose={() => setShowCreate(false)} onCreate={createChat} />
+        <CreateModal
+          onClose={() => setShowCreate(false)}
+          onCreate={createChat}
+          isFirstChat={chats.length === 0}
+        />
       )}
     </div>
   );
 }
 
 /* Create モーダル（簡易） */
-function CreateModal({ onClose, onCreate }: { onClose: () => void; onCreate: (title: string) => void }) {
+function CreateModal({ onClose, onCreate, isFirstChat }: { onClose: () => void; onCreate: (title: string) => void; isFirstChat: boolean }) {
   const [title, setTitle] = useState("");
 
   const submit = () => {
@@ -232,13 +243,19 @@ function CreateModal({ onClose, onCreate }: { onClose: () => void; onCreate: (ti
       background: "rgba(0,0,0,0.3)", zIndex: 1000
     }}>
       <div style={{ background: "#fff", padding: 20, borderRadius: 10, width: 480 }}>
-        <h3>チャット作成</h3>
+        <h3>新しいチャットを作成しましょう！</h3>
+        <p>タイトルを入力してください。</p>
         <div>
-          <label>タイトル</label>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} style={{ width: "100%" }} />
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            style={{ width: "100%" }}
+            placeholder="チャットのタイトル"
+            autoFocus
+          />
         </div>
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 8 }}>
-          <button onClick={onClose}>キャンセル</button>
+          {!isFirstChat && <button onClick={onClose}>キャンセル</button>}
           <button onClick={submit}>作成</button>
         </div>
       </div>
