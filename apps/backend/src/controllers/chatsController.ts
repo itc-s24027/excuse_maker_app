@@ -1,4 +1,4 @@
-// 解説: リクエストを受け取ってサービスに繋ぐ「窓口」だ。
+// 解説: リクエストを受け取ってサービスに繋ぐ「窓口」
 import type { Request, Response } from "express";
 import { createChatSchema, evaluationSchema } from "../validators/chatSchemas.js";
 import * as chatService from "../services/chatService.js";

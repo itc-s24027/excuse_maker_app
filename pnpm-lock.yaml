@@ -38,9 +38,6 @@ importers:
       cors:
         specifier: ^2.8.5
         version: 2.8.5
-      dotenv:
-        specifier: ^17.2.3
-        version: 17.2.3
       express:
         specifier: ^5.2.1
         version: 5.2.1
@@ -69,6 +66,9 @@ importers:
       '@types/node':
         specifier: ^20.19.25
         version: 20.19.25
+      dotenv:
+        specifier: ^17.2.3
+        version: 17.2.3
       prisma:
         specifier: ^7.4.0
         version: 7.4.0(@types/react@19.2.7)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
