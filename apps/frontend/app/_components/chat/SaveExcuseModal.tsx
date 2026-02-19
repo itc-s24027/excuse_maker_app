@@ -6,6 +6,7 @@ import TagCreator from "./TagCreator";
 import SelectedTagsDisplay from "./SelectedTagsDisplay";
 
 interface Tag {
+  id?: string;
   title: string;
   isSystemTag?: boolean;
 }
@@ -14,8 +15,9 @@ interface SaveExcuseModalProps {
   isOpen: boolean;
   excuseText: string;
   onClose: () => void;
-  onSave: (selectedTags: string[]) => void;
+  onSave: (selectedTags: Tag[]) => void;
   availableTags: Tag[];
+  onTagsUpdated?: () => void;
 }
 
 export default function SaveExcuseModal({
@@ -24,6 +26,7 @@ export default function SaveExcuseModal({
   onClose,
   onSave,
   availableTags,
+  onTagsUpdated,
 }: SaveExcuseModalProps) {
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [allTags, setAllTags] = useState<Tag[]>(availableTags);
@@ -37,10 +40,19 @@ export default function SaveExcuseModal({
   }, [isOpen, availableTags]);
 
   // タグが新規作成された時の処理
-  const handleTagCreated = (newTag: string) => {
-    const newTagObj: Tag = { title: newTag, isSystemTag: false };
+  const handleTagCreated = (newTag: { id: string; title: string }) => {
+    const newTagObj: Tag = {
+      id: newTag.id,
+      title: newTag.title,
+      isSystemTag: false
+    };
     setAllTags((prev) => [...prev, newTagObj]);
     setSelectedTags((prev) => [...prev, newTagObj]);
+
+    // 親コンポーネントのタグ一覧を更新
+    if (onTagsUpdated) {
+      onTagsUpdated();
+    }
   };
 
   // タグ選択/解除
@@ -58,7 +70,7 @@ export default function SaveExcuseModal({
 
   // 保存処理
   const handleSave = () => {
-    onSave(selectedTags.map(t => t.title));
+    onSave(selectedTags);
   };
 
   if (!isOpen) return null;

@@ -24,9 +24,10 @@ router.get("/me", authMiddleware, async (req: Request, res: Response) => {
         }
 
         return res.json({
-        uid: user.uid,
-        email: user.email,
-        nickname:  user.nickname,
+            id: user.id,
+            uid: user.uid,
+            email: user.email,
+            nickname: user.nickname,
         });
     } catch (error) {
         console.log("ユーザー情報取得エラー:", error);
