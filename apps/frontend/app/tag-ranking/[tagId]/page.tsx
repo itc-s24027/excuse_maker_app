@@ -20,6 +20,10 @@ interface Excuse {
   chat: {
     id: string;
     title: string;
+    user: {
+      id: string;
+      nickname: string | null;
+    };
   };
 }
 
@@ -259,6 +263,9 @@ export default function TagRankingPage({ params }: { params: Promise<{ tagId: st
                         <div style={{ flex: 1 }}>
                           <div className={styles.chatInfo}>
                             チャットタイトル: <span className={styles.chatTitle}>{excuse.chat.title}</span>
+                          </div>
+                          <div className={styles.chatInfo}>
+                            ユーザー: <span className={styles.chatTitle}>{excuse.chat.user.nickname || "匿名ユーザー"}</span>
                           </div>
                           <div className={styles.createdDate}>
                             {new Date(excuse.createdAt).toLocaleDateString("ja-JP")}

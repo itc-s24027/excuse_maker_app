@@ -110,6 +110,12 @@ export async function getExcusesByTag({ tagId }: { tagId: string }) {
         select: {
           id: true,
           title: true,
+          user: {
+            select: {
+              id: true,
+              nickname: true,
+            },
+          },
         },
       },
       tags: {
