@@ -22,8 +22,13 @@ html, body {
     --primary-lighter: #dfc9ab;
     --primary-bg: linear-gradient(135deg, #c4b49a 0%, #d4c6a8 50%, #c4b49a 100%);
     --accent-bg: #fff6e9;
-    --success-color: #4CAF50;
-    --danger-color: #d9534f;
+    --success-color: #6b9b7a;
+    --success-color-light: #8db799;
+    --success-bg-light: #f0f5f2;
+    --success-border: #6b9b7a;
+    --danger-color: #c87960;
+    --danger-color-light: #d4957a;
+    --success-hover: #7aaa89;
 
     /* テキスト色 */
     --text-color: #665440;
