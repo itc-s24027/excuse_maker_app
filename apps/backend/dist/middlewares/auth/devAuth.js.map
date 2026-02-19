@@ -1,0 +1,1 @@
+{"version":3,"file":"devAuth.js","sourceRoot":"","sources":["../../../src/middlewares/auth/devAuth.ts"],"names":[],"mappings":"AAEA,MAAM,CAAC,MAAM,OAAO,GAAG,CACnB,GAAY,EACZ,IAAc,EACd,IAAkB,EACpB,EAAE;IACA,GAAG,CAAC,IAAI,GAAG;QACP,GAAG,EAAE,UAAU;QACf,KAAK,EAAE,iBAAiB;QACxB,IAAI,EAAE,UAAU;KACnB,CAAC;IACF,IAAI,EAAE,CAAC;AACX,CAAC,CAAC"}
