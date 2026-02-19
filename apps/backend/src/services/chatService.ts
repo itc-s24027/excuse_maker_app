@@ -41,6 +41,7 @@ export async function getChatsByUser(userUid: string) {
     const rows = await prisma.chat.findMany({
         where: {
             user: { uid: userUid },
+            isDeleted: false, // 削除されていないチャットのみを取得
         },
         orderBy: { createdAt: "desc" },
         select: {
@@ -60,9 +61,14 @@ export async function getChatDetail(chatId: string, userUid: string) {
         where: {
             id: chatId,
             user: { uid: userUid },
+            isDeleted: false, // 削除されていないチャットのみを取得
         },
         include: {
-            excuses: true,
+            excuses: {
+                include: {
+                    tags: true, // タグ情報を含める
+                },
+            },
         },
     });
     if (!row) throw new Error("Chat not found");
@@ -94,7 +100,25 @@ export async function updateExcuseVisibility({ excuseId, isDeleted }: { excuseId
 }
 
 /**
+ * チャットのタイトルを更新
+ */
+export async function updateChatTitle({ chatId, userUid, title }: { chatId: string; userUid: string; title: string }) {
+    const chat = await prisma.chat.findUnique({ where: { id: chatId }, include: { user: true } });
+    if (!chat) throw new Error("Chat not found");
+    // user relation からユーザー識別子を確認
+    if ((chat.user as any)?.uid && (chat.user as any).uid !== userUid) {
+        throw new Error("Forbidden");
+    }
+    const updated = await prisma.chat.update({
+        where: { id: chatId },
+        data: { title },
+    });
+    return updated;
+}
+
+/**
  * チャット削除（論理削除：isDeletedフラグをtrueに設定）
+ * 関連する言い訳も論理削除する
  */
 export async function deleteChat({ chatId, userUid }: { chatId: string; userUid: string }) {
     return prisma.$transaction(async (tx) => {
@@ -104,7 +128,14 @@ export async function deleteChat({ chatId, userUid }: { chatId: string; userUid:
         if ((chat.user as any)?.uid && (chat.user as any).uid !== userUid) {
             throw new Error("Forbidden");
         }
-        // 論理削除：isDeletedをtrueに設定
+
+        // チャットに関連する言い訳を論理削除
+        await tx.excuse.updateMany({
+            where: { chatId: chatId },
+            data: { isDeleted: true },
+        });
+
+        // チャットを論理削除
         await tx.chat.update({
             where: { id: chatId },
             data: { isDeleted: true },

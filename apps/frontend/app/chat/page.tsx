@@ -17,7 +17,8 @@ import styles from "./page.module.css";
 
 type ChatSummary = { id: string; title: string };
 type Message = { id: string; role: "user" | "ai"; text: string };
-type Answer = { text: string; deleted: boolean; success: boolean; excuseId: string };
+type TagInfo = { excuseId: string; tagId: string; tag?: { id: string; title: string } };
+type Answer = { text: string; deleted: boolean; success: boolean; excuseId: string; tags?: TagInfo[] };
 type AnswerGroup = { promptId: string; prompt: string; answers: Answer[]; currentIndex: number };
 type Tag = {
   id?: string;
@@ -47,6 +48,11 @@ export default function ChatPage() {
   const [showHiddenAnswers, setShowHiddenAnswers] = useState<Record<string, boolean>>({}); // 非表示の回答表示制御
   const [deleteConfirmChatId, setDeleteConfirmChatId] = useState<string | null>(null); // 削除確認ダイアログで削除対象のチャットID
   const [openMenuChatId, setOpenMenuChatId] = useState<string | null>(null); // 三点リーダーメニューが開いているチャットID
+  const [editTitleChatId, setEditTitleChatId] = useState<string | null>(null); // タイトル編集モーダルで編集対象のチャットID
+  const [editTitleValue, setEditTitleValue] = useState(""); // タイトル編集モーダルの入力値
+  const [chatWithTaggedExcuses, setChatWithTaggedExcuses] = useState<boolean>(false); // 削除対象チャットにタグ付き言い訳があるか
+  const [showSidebar, setShowSidebar] = useState(false); // ハンバーガーメニューでサイドバー表示
+  const [showRightSidebar, setShowRightSidebar] = useState(false); // ハンバーガーメニューで右サイドバー表示
 
   // SaveExcuseModal 用の状態
   const [showSaveModal, setShowSaveModal] = useState(false);
@@ -168,6 +174,7 @@ export default function ChatPage() {
             situation?: string;
             isDeleted?: boolean;
             success?: boolean;
+            tags?: TagInfo[];
           }
 
           const groupedBySituation = (chatDetail.excuses as ExcuseResponse[]).reduce((acc: Record<string, ExcuseResponse[]>, excuse) => {
@@ -195,6 +202,7 @@ export default function ChatPage() {
                 deleted: isDeleted,
                 success: success,
                 excuseId: excuse.id, // ExcuseIDを保存
+                tags: excuse.tags || [], // タグ情報を保存
               };
             }),
             currentIndex: 0,
@@ -1050,10 +1058,64 @@ export default function ChatPage() {
 
       // ダイアログを閉じる
       setDeleteConfirmChatId(null);
+      setChatWithTaggedExcuses(false);
       setOpenMenuChatId(null);
+
+      // 成功メッセージを表示
+      if (chatWithTaggedExcuses) {
+        showAlert("チャットとランキングに登録された言い訳を削除しました");
+      } else {
+        showAlert("チャットを削除しました");
+      }
     } catch (error) {
       console.error("チャット削除エラー:", error);
       showAlert("チャット削除に失敗しました");
+    }
+  };
+
+  // チャットのタイトル編集処理
+  const handleUpdateChatTitle = async () => {
+    if (!editTitleChatId || !editTitleValue.trim()) {
+      showAlert("タイトルを入力してください");
+      return;
+    }
+
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+      if (!API_URL) {
+        showAlert("APIのURLが設定されていません");
+        return;
+      }
+
+      const response = await apifetch(`${API_URL}/chats/${editTitleChatId}/title`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ title: editTitleValue.trim() }),
+      });
+
+      if (!response.ok) {
+        console.error("タイトル更新エラー:", response.status);
+        showAlert("タイトル更新に失敗しました");
+        return;
+      }
+
+      // チャットリストのタイトルを更新
+      setChats((prevChats) =>
+        prevChats.map((chat) =>
+          chat.id === editTitleChatId ? { ...chat, title: editTitleValue.trim() } : chat
+        )
+      );
+
+      // モーダルを閉じる
+      setEditTitleChatId(null);
+      setEditTitleValue("");
+      setOpenMenuChatId(null);
+      showAlert("タイトルを更新しました");
+    } catch (error) {
+      console.error("タイトル更新エラー:", error);
+      showAlert("タイトル更新に失敗しました");
     }
   };
 
@@ -1066,8 +1128,38 @@ export default function ChatPage() {
 
   return (
     <div className={styles.mainContainer}>
+      {/* ハンバーガーメニュー（モバイル用） */}
+      <button
+        className={styles.hamburgerButton}
+        onClick={() => setShowSidebar(!showSidebar)}
+      >
+        ☰
+      </button>
+
+      {/* 右サイドバーハンバーガーボタン */}
+      <button
+        className={styles.hamburgerRightButton}
+        onClick={() => setShowRightSidebar(!showRightSidebar)}
+      >
+        ⋮
+      </button>
+
+      {/* モバイル用オーバーレイ */}
+      {showSidebar && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 99,
+            display: 'none',
+          }}
+          onClick={() => setShowSidebar(false)}
+        />
+      )}
+
       {/* 左サイドバー */}
-      <aside className={styles.sidebar}>
+      <aside className={`${styles.sidebar} ${showSidebar ? styles.open : ''}`}>
         <button
           onClick={() => setShowCreate(true)}
           style={{
@@ -1173,6 +1265,36 @@ export default function ChatPage() {
                       className="no-hover-effect"
                       onClick={(e) => {
                         e.stopPropagation();
+                        setEditTitleChatId(c.id);
+                        setEditTitleValue(c.title);
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: "8px 16px",
+                        background: "transparent",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "#665440",
+                        fontSize: "0.9rem",
+                        textAlign: "left",
+                        transition: "all 0.2s ease",
+                      }}
+                    >
+                      編集
+                    </button>
+                    <button
+                      className="no-hover-effect"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // 削除対象チャットのタグ付き言い訳をチェック
+                        const chatAnswers = chatAnswerHistory[c.id] ?? [];
+                        const hasTaggedExcuses = chatAnswers.some(group =>
+                          group.answers.some(answer => {
+                            // タグが付いており、削除されていない言い訳をチェック
+                            return !answer.deleted && answer.tags && answer.tags.length > 0;
+                          })
+                        );
+                        setChatWithTaggedExcuses(hasTaggedExcuses);
                         setDeleteConfirmChatId(c.id);
                       }}
                       style={{
@@ -1208,8 +1330,8 @@ export default function ChatPage() {
         padding: 20,
         borderRadius: 12,
         border: "2px solid #c3af96",
-        overflowY: "auto",
-      }}>
+        minWidth: 0,
+      }} className={styles.chatArea}>
         <div style={{ maxWidth: 900, margin: "0 auto" , paddingTop: 20}}>
           <div style={{ marginBottom: 16 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: "12px" }}>
@@ -1695,20 +1817,21 @@ export default function ChatPage() {
                           ✕
                         </button>
                         <div style={{
-                          fontSize: 20,
-                          color: idx === currentGroupIdx ? "rgba(255,255,255,0.9)" : "var(--success-color-light)",
-                          marginBottom: 4,
-                          fontWeight: "600",
-                        }}>
-                          <strong></strong> {group.prompt.substring(0, 35)}
-                        </div>
-                        <div style={{
                           fontSize: 16,
                           lineHeight: 1.6,
                           color: idx === currentGroupIdx ? "rgba(255,255,255,0.95)" : "var(--success-color-light)",
                           paddingRight: 40,
+                          fontWeight: "700",
+                          marginBottom: 8,
                         }}>
-                          <strong></strong> {successAnswer.text.substring(0, 80)}
+                          {successAnswer.text.substring(0, 80)}
+                        </div>
+                        <div style={{
+                          fontSize: 14,
+                          color: idx === currentGroupIdx ? "rgba(255,255,255,0.8)" : "rgba(76, 175, 80, 0.7)",
+                          fontWeight: "500",
+                        }}>
+                          {group.prompt.substring(0, 40)}
                         </div>
 
                         {/* ノートアイコンボタン（右下） */}
@@ -1859,7 +1982,7 @@ export default function ChatPage() {
       </main>
 
       {/* 右サイドバー (タグ等) */}
-      <aside style={{
+      <aside className={`${styles.rightSidebar} ${showRightSidebar ? styles.open : ''}`} style={{
         width: 280,
         background: "#fff6e9",
         padding: 16,
@@ -1963,6 +2086,21 @@ export default function ChatPage() {
             }}>
               本当にチャットを削除しますか？
             </h3>
+            {chatWithTaggedExcuses && (
+              <p style={{
+                fontSize: "0.9rem",
+                color: "#c87960",
+                marginBottom: "1rem",
+                textAlign: "center",
+                fontWeight: "600",
+                backgroundColor: "#ffe8e0",
+                padding: "12px",
+                borderRadius: "8px",
+                border: "1px solid #c87960",
+              }}>
+                ⚠️ ランキングに登録されている言い訳があります。本当に削除しますか？
+              </p>
+            )}
             <p style={{
               fontSize: "0.95rem",
               color: "#9a6044",
@@ -1995,7 +2133,10 @@ export default function ChatPage() {
                 はい
               </button>
               <button
-                onClick={() => setDeleteConfirmChatId(null)}
+                onClick={() => {
+                  setDeleteConfirmChatId(null);
+                  setChatWithTaggedExcuses(false);
+                }}
                 style={{
                   padding: "10px 24px",
                   fontSize: "1rem",
@@ -2009,6 +2150,126 @@ export default function ChatPage() {
                 }}
               >
                 いいえ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* チャットのタイトル編集モーダル */}
+      {editTitleChatId && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "rgba(0, 0, 0, 0.4)",
+          zIndex: 1001,
+        }}>
+          <div style={{
+            background: "#fff6e9",
+            padding: "2rem",
+            borderRadius: "16px",
+            maxWidth: "500px",
+            border: "2px solid #c3af96",
+            boxShadow: "0 8px 24px rgba(102, 84, 64, 0.2)",
+          }}>
+            <h3 style={{
+              fontSize: "1.3rem",
+              fontWeight: "700",
+              color: "#665440",
+              marginBottom: "1rem",
+              textAlign: "center",
+            }}>
+              チャットタイトルを編集
+            </h3>
+            <input
+              value={editTitleValue}
+              onChange={(e) => setEditTitleValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleUpdateChatTitle();
+                }
+              }}
+              style={{
+                width: "100%",
+                padding: "12px 16px",
+                fontSize: "1rem",
+                border: "2px solid #c3af96",
+                borderRadius: "10px",
+                fontFamily: "var(--font-noto-sans-jp)",
+                color: "#665440",
+                background: "#fff",
+                marginBottom: "1.5rem",
+                transition: "all 0.25s ease",
+                boxSizing: "border-box",
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = "#9a6044";
+                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(154, 96, 68, 0.1)";
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = "#c3af96";
+                e.currentTarget.style.boxShadow = "none";
+              }}
+              autoFocus
+            />
+            <div style={{
+              display: "flex",
+              gap: "12px",
+              justifyContent: "flex-end",
+            }}>
+              <button
+                onClick={() => {
+                  setEditTitleChatId(null);
+                  setEditTitleValue("");
+                }}
+                style={{
+                  padding: "10px 24px",
+                  fontSize: "1rem",
+                  fontWeight: "600",
+                  color: "#665440",
+                  background: "#fff",
+                  border: "2px solid #c3af96",
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                  transition: "all 0.25s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#f0ebe3";
+                  e.currentTarget.style.borderColor = "#9a6044";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#fff";
+                  e.currentTarget.style.borderColor = "#c3af96";
+                }}
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleUpdateChatTitle}
+                style={{
+                  padding: "10px 24px",
+                  fontSize: "1rem",
+                  fontWeight: "600",
+                  color: "#fff",
+                  background: "#665440",
+                  border: "2px solid #665440",
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                  transition: "all 0.25s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#9a6044";
+                  e.currentTarget.style.borderColor = "#9a6044";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#665440";
+                  e.currentTarget.style.borderColor = "#665440";
+                }}
+              >
+                更新
               </button>
             </div>
           </div>

@@ -91,6 +91,10 @@
   border: 1px solid #ddd;
   border-radius: 3px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
 }
 
 /* Excuse Text */
@@ -140,15 +144,19 @@
 .cardFooter {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
+  gap: 12px;
   padding-top: 10px;
   border-top: 1px solid #eee;
+  flex-wrap: wrap;
 }
 
 .chatInfo {
   font-size: 15px;
   color: #999;
   margin-bottom: 5px;
+  flex: 1;
+  min-width: 200px;
 }
 
 .chatTitle {
@@ -165,19 +173,23 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .likeButton {
   background: #ffffff;
   border: 1px solid #999999;
   cursor: pointer;
-  padding: 8px 12px;
+  padding: 8px 16px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 8px;
   transition: all 0.2s ease;
   border-radius: 8px;
   opacity: 1;
+  white-space: nowrap;
+  min-height: 36px;
 }
 
 .likeButton:hover {
@@ -193,6 +205,7 @@
   height: 24px;
   transition: all 0.2s ease;
   filter: grayscale(50%);
+  flex-shrink: 0;
 }
 
 .likeIcon.liked {
@@ -246,4 +259,173 @@
 .errorLink:hover {
   text-decoration: underline;
 }
+
+/* Responsive */
+/* Hamburger Button */
+.hamburgerButton {
+  display: none;
+}
+
+.mainContainer {
+  position: relative;
+}
+
+.mainContent {
+  width: 100%;
+}
+
+.sidebar {
+  width: 280px;
+}
+
+.sidebar.open {
+  transform: translateX(0);
+}
+
+@media (max-width: 768px) {
+  .hamburgerButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: #665440;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #fff;
+    font-size: 24px;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 105;
+  }
+
+  .hamburgerButton:hover {
+    background: #9a6044;
+  }
+
+  .mainContainer {
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+  }
+
+  .mainContent {
+    padding: 10px;
+    margin-top: 50px;
+  }
+
+  .sidebar {
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 280px;
+    height: 100vh;
+    background: #fff6e9;
+    border-radius: 0;
+    border: none;
+    border-left: 2px solid #c3af96;
+    z-index: 100;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+    padding-top: 20px;
+    gap: 12px;
+    height: 100vh !important;
+    position: fixed !important;
+    top: 0 !important;
+  }
+
+  .container {
+    padding: 15px;
+    max-width: 100%;
+  }
+
+  .tagTitle {
+    font-size: 24px;
+  }
+
+  .tagList {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .excuseCard {
+    padding: 12px;
+  }
+
+  .cardFooter {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .likeContainer {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .hamburgerButton {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .mainContent {
+    padding: 5px;
+    margin-top: 40px;
+  }
+
+  .sidebar {
+    width: 100%;
+  }
+
+  .container {
+    padding: 10px;
+  }
+
+  .header {
+    margin-bottom: 20px;
+  }
+
+  .tagTitle {
+    font-size: 20px;
+  }
+
+  .tagList {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .excuseCard {
+    padding: 10px;
+    border-radius: 8px;
+  }
+
+  .excuseContent {
+    gap: 8px;
+  }
+
+  .likesSection {
+    gap: 6px;
+  }
+
+  .likeButton {
+    height: 36px;
+    font-size: 16px;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
 

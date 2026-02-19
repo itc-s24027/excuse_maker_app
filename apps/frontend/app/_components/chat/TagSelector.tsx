@@ -54,7 +54,6 @@ export default function TagSelector({
             title={tag.isSystemTag ? "システムタグ" : ""}
           >
             {tag.title}
-            {tag.isSystemTag && " ★"}
           </button>
         ))
       ) : (

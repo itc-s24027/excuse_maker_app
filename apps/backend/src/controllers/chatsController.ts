@@ -89,6 +89,27 @@ export async function updateExcuseVisibility(req: Request, res: Response) {
     }
 }
 
+// チャットのタイトルを更新
+export async function updateChatTitle(req: Request, res: Response) {
+    try {
+        const chatId = req.params.chatId!;
+        const { title } = req.body;
+
+        if (!title || typeof title !== 'string') {
+            return res.status(400).json({ error: "タイトルが正しくありません" });
+        }
+
+        const updated = await chatService.updateChatTitle({
+            chatId,
+            userUid: req.user?.uid ?? "",
+            title: title.trim(),
+        });
+        res.status(200).json(updated);
+    } catch (err: any) {
+        res.status(403).json({ error: "タイトル更新に失敗しました" });
+    }
+}
+
 // チャット削除
 export async function deleteChat(req: Request, res: Response) {
     try {
