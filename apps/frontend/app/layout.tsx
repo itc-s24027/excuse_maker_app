@@ -50,6 +50,7 @@ const notoSansJP = Noto_Sans_JP({
 export const metadata = {
     title: 'ログイン - ねこばち隊のふくぐま',
     description: 'ログインページ',
+    viewport: 'width=device-width, initial-scale=1, maximum-scale=5',
 };
 
 export default function RootLayout({

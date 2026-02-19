@@ -36,6 +36,7 @@ export default function TagRankingPage({ params }: { params: Promise<{ tagId: st
   const { currentUser } = useCurrentUser();
   const [likedExcuses, setLikedExcuses] = useState<Set<string>>(new Set());
   const [allTags, setAllTags] = useState<Tag[]>([]);
+  const [showSidebar, setShowSidebar] = useState(false); // ハンバーガーメニューの状態
 
   // paramsをアンラップ（コンポーネント直下で呼び出し）
   const resolvedParams = React.use(params);
@@ -173,9 +174,17 @@ export default function TagRankingPage({ params }: { params: Promise<{ tagId: st
   }
 
   return (
-    <div style={{ display: "flex", gap: 20, padding: 20, minHeight: "100vh", background: "var(--primary-bg)" }}>
+    <div style={{ display: "flex", gap: 20, padding: 20, minHeight: "100vh", background: "var(--primary-bg)" }} className={styles.mainContainer}>
+      {/* ハンバーガーボタン */}
+      <button
+        className={styles.hamburgerButton}
+        onClick={() => setShowSidebar(!showSidebar)}
+      >
+        ⋮
+      </button>
+
       {/* メインコンテンツ */}
-      <main style={{ flex: 1 }}>
+      <main style={{ flex: 1 }} className={styles.mainContent}>
         <div className={styles.container} style={{ maxWidth: "100%", margin: 0, padding: 0 }}>
           {/* ヘッダー */}
           <div className={styles.header}>
@@ -247,7 +256,7 @@ export default function TagRankingPage({ params }: { params: Promise<{ tagId: st
 
                       {/* チャット情報といいねボタン */}
                       <div className={styles.cardFooter}>
-                        <div>
+                        <div style={{ flex: 1 }}>
                           <div className={styles.chatInfo}>
                             チャットタイトル: <span className={styles.chatTitle}>{excuse.chat.title}</span>
                           </div>
@@ -287,7 +296,7 @@ export default function TagRankingPage({ params }: { params: Promise<{ tagId: st
       </main>
 
       {/* サイドバー - タグ一覧 */}
-      <aside style={{
+      <aside className={`${styles.sidebar} ${showSidebar ? styles.open : ''}`} style={{
         width: 280,
         background: "#fff6e9",
         padding: 16,

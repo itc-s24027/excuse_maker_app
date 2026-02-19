@@ -14,6 +14,9 @@ router.get("/user", authMiddleware, chatsController.getUserChats);
 // チャット詳細取得
 router.get("/:chatId", authMiddleware, chatsController.getChatById);
 
+// チャットのタイトルを更新
+router.put("/:chatId/title", authMiddleware, chatsController.updateChatTitle);
+
 // 評価更新
 router.put("/:chatId/evaluation", authMiddleware, chatsController.updateEvaluation);
 
