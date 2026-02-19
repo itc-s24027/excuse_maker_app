@@ -17,7 +17,26 @@ export default function LogoutButton() {
     };
 
     return (
-        <button onClick={logoutWithGoogle}>
+        <button
+            onClick={logoutWithGoogle}
+            style={{
+                padding: "12px 16px",
+                fontSize: "0.95rem",
+                fontWeight: "600",
+                color: "#fff",
+                background: "#665440",
+                border: "none",
+                borderRadius: "10px",
+                cursor: "pointer",
+                transition: "all 0.25s ease",
+            }}
+            onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#9a6044";
+            }}
+            onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#665440";
+            }}
+        >
             ログアウト
         </button>
     );
