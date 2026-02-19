@@ -17,6 +17,9 @@ router.get("/:chatId", authMiddleware, chatsController.getChatById);
 // 評価更新
 router.put("/:chatId/evaluation", authMiddleware, chatsController.updateEvaluation);
 
+// 非表示フラグ更新
+router.put("/:chatId/visibility", authMiddleware, chatsController.updateExcuseVisibility);
+
 // チャット削除
 router.delete("/:chatId", authMiddleware, chatsController.deleteChat);
 

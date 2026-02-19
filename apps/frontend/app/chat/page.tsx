@@ -14,7 +14,7 @@ import { apifetch } from "../lib/apiClient";
 
 type ChatSummary = { id: string; title: string };
 type Message = { id: string; role: "user" | "ai"; text: string };
-type Answer = { text: string; deleted: boolean; success: boolean };
+type Answer = { text: string; deleted: boolean; success: boolean; excuseId: string };
 type AnswerGroup = { promptId: string; prompt: string; answers: Answer[]; currentIndex: number };
 
 export default function ChatPage() {
@@ -100,7 +100,7 @@ export default function ChatPage() {
         let answerGroups: AnswerGroup[] = [];
 
         // 新スキーマ（ExcusePrompt/ExcuseAnswer）をチェック
-        if (chatDetail.excusePrompts && Array.isArray(chatDetail.excusePrompts)) {
+        if (chatDetail.excusePrompts && Array.isArray(chatDetail.excusePrompts) && chatDetail.excusePrompts.length > 0) {
           answerGroups = chatDetail.excusePrompts.map((prompt: any, idx: number) => ({
             promptId: prompt.id || String(idx),
             prompt: prompt.situation || "", // プロンプト
@@ -114,20 +114,59 @@ export default function ChatPage() {
             currentIndex: 0,
           }));
         }
-        // フォールバック：古いスキーマ（Excuse）から取得
-        else if (chatDetail.excuses && Array.isArray(chatDetail.excuses)) {
-          answerGroups = chatDetail.excuses.map((excuse: any, idx: number) => ({
-            promptId: excuse.id || String(idx),
-            prompt: excuse.situation || "", // situationがプロンプト
-            answers: [
-              {
-                text: excuse.excuseText, // excuseTextがAIの回答
-                deleted: excuse.isDeleted || false,
-                success: excuse.success || false,
-              }
-            ],
+        // フォールバック：古いスキーマ（Excuse）から取得して、situationごとにグループ化
+        else if (chatDetail.excuses && Array.isArray(chatDetail.excuses) && chatDetail.excuses.length > 0) {
+          console.log("チャット詳細取得:", chatDetail.excuses);
+
+          // 最初のExcuseレコードの詳細をログ
+          if (chatDetail.excuses.length > 0) {
+            console.log("最初のExcuseレコードの詳細:", {
+              ...chatDetail.excuses[0],
+              isDeleted: (chatDetail.excuses[0] as any).isDeleted,
+              success: (chatDetail.excuses[0] as any).success,
+            });
+          }
+
+          // situationごとにExcuseをグループ化
+          const groupedBySituation = chatDetail.excuses.reduce((acc: any, excuse: any) => {
+            const situation = excuse.situation || "";
+            if (!acc[situation]) {
+              acc[situation] = [];
+            }
+            acc[situation].push(excuse);
+            return acc;
+          }, {});
+
+          console.log("グループ化後:", groupedBySituation);
+
+          // グループをAnswerGroupに変換
+          answerGroups = Object.entries(groupedBySituation).map(([situation, excuses]: [string, any], idx: number) => ({
+            promptId: String(idx),
+            prompt: situation,
+            answers: excuses.map((excuse: any) => {
+              const isDeleted = (excuse as any).isDeleted || false;
+              const success = (excuse as any).success || false;
+              console.log(`Excuse ${excuse.id}: isDeleted=${isDeleted}, success=${success}`);
+              return {
+                text: excuse.excuseText, // AIの回答
+                deleted: isDeleted,
+                success: success,
+                excuseId: excuse.id, // ExcuseIDを保存
+              };
+            }),
             currentIndex: 0,
           }));
+
+          console.log("最終的なAnswerGroups:", answerGroups);
+
+          // 成功フラグが true のものをログ
+          const successCount = answerGroups.reduce((count, group) => {
+            return count + group.answers.filter(a => a.success && !a.deleted).length;
+          }, 0);
+          const hiddenCount = answerGroups.reduce((count, group) => {
+            return count + group.answers.filter(a => a.deleted).length;
+          }, 0);
+          console.log(`成功数: ${successCount}, 非表示数: ${hiddenCount}`);
         }
 
         if (answerGroups.length > 0) {
@@ -143,10 +182,10 @@ export default function ChatPage() {
             [selectedChat]: lastPrompt,
           }));
 
-          // 最初の回答グループを表示
+          // 最後の回答グループを表示
           setCurrentGroupIndex((prev) => ({
             ...prev,
-            [selectedChat]: 0,
+            [selectedChat]: Math.max(0, answerGroups.length - 1),
           }));
         }
       } catch (error) {
@@ -339,12 +378,13 @@ export default function ChatPage() {
 
       const data = await res.json();
       const aiText = data?.excuse ?? "AIの応答に失敗しました";
+      const excuseId = data?.excuseId; // バックエンドから返ってきたexcuseIdを取得
 
       // 新しい回答グループを作成
       const newAnswerGroup: AnswerGroup = {
         promptId,
         prompt: userMsg.text,
-        answers: [{ text: aiText, deleted: false, success: false }],
+        answers: [{ text: aiText, deleted: false, success: false, excuseId: excuseId || "" }],
         currentIndex: 0,
       };
 
@@ -381,107 +421,253 @@ export default function ChatPage() {
   };
 
   // 成功を記録
-  const markSuccess = () => {
-    if (!currentAnswerGroup || currentGroupIdx < 0 || !selectedChat) return;
+  const markSuccess = async () => {
+    if (!currentAnswerGroup || currentGroupIdx < 0 || !selectedChat || !currentAnswer) return;
 
-    setChatAnswerHistory((prev) => {
-      const history = [...(prev[selectedChat] ?? [])];
-      const groupIndex = currentGroupIdx;
-      if (groupIndex >= 0 && groupIndex < history.length) {
-        const group = history[groupIndex];
-        const newAnswers = [...group.answers];
-        // 現在表示されている回答に成功フラグを立てる
-        const currentIdx = currentAnswerIndex;
-        if (currentIdx >= 0 && currentIdx < newAnswers.length && !newAnswers[currentIdx].deleted) {
-          newAnswers[currentIdx] = { ...newAnswers[currentIdx], success: true };
-        }
-        history[groupIndex] = { ...group, answers: newAnswers };
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+      if (!API_URL) {
+        console.error("APIのURLが設定されていません");
+        return;
       }
-      return { ...prev, [selectedChat]: history };
-    });
+
+      // 現在表示されているExcuseIDを取得
+      const currentIdx = currentAnswerIndex;
+      console.log("markSuccess: currentIdx=", currentIdx, "currentAnswerGroup.answers=", currentAnswerGroup.answers);
+      const excuseId = currentAnswerGroup.answers[currentIdx]?.excuseId;
+
+      if (!excuseId) {
+        console.error("ExcuseIDが見つかりません", { currentIdx, answers: currentAnswerGroup.answers });
+        return;
+      }
+
+      console.log("markSuccess: excuseId=", excuseId);
+
+      // API呼び出しでデータベースに保存
+      const response = await apifetch(`${API_URL}/chats/${selectedChat}/evaluation`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ excuseId, success: true }),
+      });
+
+      if (!response.ok) {
+        console.error("成功フラグ保存エラー:", response.status);
+        return;
+      }
+
+      // ローカル状態にも成功フラグを保存
+      setChatAnswerHistory((prev) => {
+        const history = [...(prev[selectedChat] ?? [])];
+        const groupIndex = currentGroupIdx;
+        if (groupIndex >= 0 && groupIndex < history.length) {
+          const group = history[groupIndex];
+          const newAnswers = [...group.answers];
+          // 現在表示されている回答に成功フラグを立てる
+          if (currentIdx >= 0 && currentIdx < newAnswers.length && !newAnswers[currentIdx].deleted) {
+            newAnswers[currentIdx] = { ...newAnswers[currentIdx], success: true };
+          }
+          history[groupIndex] = { ...group, answers: newAnswers };
+        }
+        return { ...prev, [selectedChat]: history };
+      });
+
+      console.log("成功フラグを保存しました");
+    } catch (error) {
+      console.error("成功フラグ保存エラー:", error);
+    }
   };
 
   // 回答を非表示（論理削除）
-  const hideAnswer = () => {
-    if (!currentAnswerGroup || currentGroupIdx < 0 || !selectedChat) return;
+  const hideAnswer = async () => {
+    if (!currentAnswerGroup || currentGroupIdx < 0 || !selectedChat || !currentAnswer) return;
 
-    setChatAnswerHistory((prev) => {
-      const history = [...(prev[selectedChat] ?? [])];
-      const groupIndex = currentGroupIdx;
-      if (groupIndex >= 0 && groupIndex < history.length) {
-        const group = history[groupIndex];
-        const newAnswers = [...group.answers];
-        // 現在表示されている回答を非表示にする
-        const currentIdx = currentAnswerIndex;
-        if (currentIdx >= 0 && currentIdx < newAnswers.length) {
-          newAnswers[currentIdx] = { ...newAnswers[currentIdx], deleted: true };
-        }
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+      if (!API_URL) {
+        console.error("APIのURLが設定されていません");
+        return;
+      }
 
-        // 非表示後の次の削除されていない回答を探す
-        let nextValidIdx = -1;
-        for (let i = currentIdx + 1; i < newAnswers.length; i++) {
-          if (!newAnswers[i].deleted) {
-            nextValidIdx = i;
-            break;
+      // 現在表示されているExcuseIDを取得
+      const currentIdx = currentAnswerIndex;
+      console.log("hideAnswer: currentIdx=", currentIdx, "currentAnswerGroup.answers=", currentAnswerGroup.answers);
+      const excuseId = currentAnswerGroup.answers[currentIdx]?.excuseId;
+
+      if (!excuseId) {
+        console.error("ExcuseIDが見つかりません");
+        return;
+      }
+
+      // APIエンドポイントを呼び出して、isDeletedフラグを更新
+      console.log("非表示フラグを保存します:", excuseId);
+
+      const response = await apifetch(`${API_URL}/chats/${selectedChat}/visibility`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ excuseId, isDeleted: true }),
+      });
+
+      if (!response.ok) {
+        console.error("非表示フラグ保存エラー:", response.status);
+        return;
+      }
+
+      setChatAnswerHistory((prev) => {
+        const history = [...(prev[selectedChat] ?? [])];
+        const groupIndex = currentGroupIdx;
+        if (groupIndex >= 0 && groupIndex < history.length) {
+          const group = history[groupIndex];
+          const newAnswers = [...group.answers];
+          // 現在表示されている回答を非表示にする
+          if (currentIdx >= 0 && currentIdx < newAnswers.length) {
+            newAnswers[currentIdx] = { ...newAnswers[currentIdx], deleted: true };
           }
-        }
 
-        // 次の回答がない場合は、前の削除されていない回答を探す
-        if (nextValidIdx === -1) {
-          for (let i = currentIdx - 1; i >= 0; i--) {
+          // 非表示後の次の削除されていない回答を探す
+          let nextValidIdx = -1;
+          for (let i = currentIdx + 1; i < newAnswers.length; i++) {
             if (!newAnswers[i].deleted) {
               nextValidIdx = i;
               break;
             }
           }
+
+          // 次の回答がない場合は、前の削除されていない回答を探す
+          if (nextValidIdx === -1) {
+            for (let i = currentIdx - 1; i >= 0; i--) {
+              if (!newAnswers[i].deleted) {
+                nextValidIdx = i;
+                break;
+              }
+            }
+          }
+
+          // 新しいcurrentIndexを設定（削除されていない回答がある場合）
+          const newCurrentIndex = nextValidIdx >= 0 ? nextValidIdx : currentIdx;
+
+          history[groupIndex] = { ...group, answers: newAnswers, currentIndex: newCurrentIndex };
         }
-
-        // 新しいcurrentIndexを設定（削除されていない回答がある場合）
-        const newCurrentIndex = nextValidIdx >= 0 ? nextValidIdx : currentIdx;
-
-        history[groupIndex] = { ...group, answers: newAnswers, currentIndex: newCurrentIndex };
-      }
-      return { ...prev, [selectedChat]: history };
-    });
+        return { ...prev, [selectedChat]: history };
+      });
+    } catch (error) {
+      console.error("非表示フラグ保存エラー:", error);
+    }
   };
 
   // 非表示を解除（論理削除を取り消す）
-  const undoHideAnswer = () => {
+  const undoHideAnswer = async () => {
     if (!currentAnswerGroup || currentGroupIdx < 0 || !selectedChat || !currentAnswer) return;
 
-    setChatAnswerHistory((prev) => {
-      const history = [...(prev[selectedChat] ?? [])];
-      const groupIndex = currentGroupIdx;
-      if (groupIndex >= 0 && groupIndex < history.length) {
-        const group = history[groupIndex];
-        const newAnswers = [...group.answers];
-        // 現在表示されている回答の削除フラグを解除
-        const currentIdx = currentAnswerIndex;
-        if (currentIdx >= 0 && currentIdx < newAnswers.length) {
-          newAnswers[currentIdx] = { ...newAnswers[currentIdx], deleted: false };
-        }
-        history[groupIndex] = { ...group, answers: newAnswers };
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+      if (!API_URL) {
+        console.error("APIのURLが設定されていません");
+        return;
       }
-      return { ...prev, [selectedChat]: history };
-    });
+
+      // 現在表示されているExcuseIDを取得
+      const currentIdx = currentAnswerIndex;
+      const excuseId = currentAnswerGroup.answers[currentIdx]?.excuseId;
+
+      if (!excuseId) {
+        console.error("ExcuseIDが見つかりません");
+        return;
+      }
+
+      // APIエンドポイントを呼び出して、isDeletedフラグを更新
+      console.log("非表示を解除します:", excuseId);
+
+      const response = await apifetch(`${API_URL}/chats/${selectedChat}/visibility`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ excuseId, isDeleted: false }),
+      });
+
+      if (!response.ok) {
+        console.error("非表示解除エラー:", response.status);
+        return;
+      }
+
+      setChatAnswerHistory((prev) => {
+        const history = [...(prev[selectedChat] ?? [])];
+        const groupIndex = currentGroupIdx;
+        if (groupIndex >= 0 && groupIndex < history.length) {
+          const group = history[groupIndex];
+          const newAnswers = [...group.answers];
+          // 現在表示されている回答の削除フラグを解除
+          if (currentIdx >= 0 && currentIdx < newAnswers.length) {
+            newAnswers[currentIdx] = { ...newAnswers[currentIdx], deleted: false };
+          }
+          history[groupIndex] = { ...group, answers: newAnswers };
+        }
+        return { ...prev, [selectedChat]: history };
+      });
+    } catch (error) {
+      console.error("非表示解除エラー:", error);
+    }
   };
 
   // 成功をキャンセル
-  const cancelSuccess = (groupIndex: number, answerIndex: number) => {
+  const cancelSuccess = async (groupIndex: number, answerIndex: number) => {
     if (!selectedChat) return;
 
-    setChatAnswerHistory((prev) => {
-      const history = [...(prev[selectedChat] ?? [])];
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+      if (!API_URL) {
+        console.error("APIのURLが設定されていません");
+        return;
+      }
+
+      const history = chatAnswerHistory[selectedChat] ?? [];
       if (groupIndex >= 0 && groupIndex < history.length) {
         const group = history[groupIndex];
-        const newAnswers = [...group.answers];
-        if (answerIndex >= 0 && answerIndex < newAnswers.length) {
-          newAnswers[answerIndex] = { ...newAnswers[answerIndex], success: false };
+        if (answerIndex >= 0 && answerIndex < group.answers.length) {
+          const excuseId = group.answers[answerIndex].excuseId;
+
+          if (!excuseId) {
+            console.error("ExcuseIDが見つかりません");
+            return;
+          }
+
+          // API呼び出しでデータベースに保存
+          console.log("成功フラグを取り消します:", excuseId);
+
+          const response = await apifetch(`${API_URL}/chats/${selectedChat}/evaluation`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ excuseId, success: false }),
+          });
+
+          if (!response.ok) {
+            console.error("成功フラグ取り消しエラー:", response.status);
+            return;
+          }
         }
-        history[groupIndex] = { ...group, answers: newAnswers };
       }
-      return { ...prev, [selectedChat]: history };
-    });
+
+      setChatAnswerHistory((prev) => {
+        const history = [...(prev[selectedChat] ?? [])];
+        if (groupIndex >= 0 && groupIndex < history.length) {
+          const group = history[groupIndex];
+          const newAnswers = [...group.answers];
+          if (answerIndex >= 0 && answerIndex < newAnswers.length) {
+            newAnswers[answerIndex] = { ...newAnswers[answerIndex], success: false };
+          }
+          history[groupIndex] = { ...group, answers: newAnswers };
+        }
+        return { ...prev, [selectedChat]: history };
+      });
+    } catch (error) {
+      console.error("成功フラグ取り消しエラー:", error);
+    }
   };
 
   // 非表示をキャンセル
@@ -544,6 +730,7 @@ export default function ChatPage() {
 
       const data = await res.json();
       const aiText = data?.excuse ?? "AIの応答に失敗しました";
+      const excuseId = data?.excuseId; // バックエンドから返ってきたexcuseIdを取得
 
       // 現在の回答グループに新しい回答を追加
       setChatAnswerHistory((prev) => {
@@ -551,7 +738,7 @@ export default function ChatPage() {
         const groupIndex = currentGroupIdx;
         if (groupIndex >= 0 && groupIndex < history.length) {
           const group = history[groupIndex];
-          const newAnswers = [...group.answers, { text: aiText, deleted: false, success: false }];
+          const newAnswers = [...group.answers, { text: aiText, deleted: false, success: false, excuseId: excuseId || "" }];
           // 新しい回答を追加し、currentIndexを最新の回答に更新
           history[groupIndex] = {
             ...group,
@@ -895,9 +1082,18 @@ export default function ChatPage() {
               </h2>
               {currentAnswerGroup && validAnswers.length > 0 && (
                 <span style={{ fontSize: 14, color: "#9a6044", fontWeight: "600" }}>
-                  {currentAnswerIndex >= 0 && currentAnswerIndex < currentAnswerGroup.answers.length
-                    ? `${currentAnswerGroup.answers.slice(0, currentAnswerIndex + 1).filter(a => !a.deleted).length}/${validAnswers.length}`
-                    : `1/${validAnswers.length}`}
+                  {currentAnswer ? (() => {
+                    // 現在表示されている回答が、削除されていない回答の何番目かを計算
+                    const currentAnswerIndex = currentAnswerGroup.answers.findIndex(a => a === currentAnswer);
+                    if (currentAnswerIndex >= 0) {
+                      // currentAnswerIndexまでのすべての回答のうち、削除されていないものの数
+                      const position = currentAnswerGroup.answers
+                        .slice(0, currentAnswerIndex + 1)
+                        .filter(a => !a.deleted).length;
+                      return `${position}/${validAnswers.length}`;
+                    }
+                    return `1/${validAnswers.length}`;
+                  })() : `1/${validAnswers.length}`}
                 </span>
               )}
             </div>
@@ -1255,7 +1451,7 @@ export default function ChatPage() {
                   }
                 }}
               >
-                {showHiddenAnswers[selectedChat!] ? "非表示を隠す" : "非表示を見る"}
+                {showHiddenAnswers[selectedChat!] ? "非表示一覧" : "非表示一覧"}
               </button>
             </div>
 
@@ -1378,12 +1574,12 @@ export default function ChatPage() {
                           height: "auto",
                           minHeight: 160,
                           padding: 18,
-                          background: idx === currentGroupIdx ? "#c87960" : "#fff",
+                          background: idx === currentGroupIdx ? "#d4957a" : "#fff",
                           borderRadius: 10,
                           cursor: "pointer",
-                          border: idx === currentGroupIdx ? "2px solid #a85d48" : "1px solid #dfc9ab",
+                          border: "2px solid #c87960",
                           transition: "all 0.25s ease",
-                          color: idx === currentGroupIdx ? "#fff" : "#665440",
+                          color: idx === currentGroupIdx ? "#fff" : "#d4957a",
                           position: "relative",
                           display: "flex",
                           flexDirection: "column",
@@ -1418,7 +1614,7 @@ export default function ChatPage() {
                             padding: 0,
                             fontSize: "14px",
                             fontWeight: "bold",
-                            color: idx === currentGroupIdx ? "#fff" : "#c87960",
+                            color: idx === currentGroupIdx ? "#fff" : "#d4957a",
                             background: "transparent",
                             border: "none",
                             cursor: "pointer",
@@ -1435,7 +1631,7 @@ export default function ChatPage() {
                         </button>
                         <div style={{
                           fontSize: 20,
-                          color: idx === currentGroupIdx ? "rgba(255,255,255,0.9)" : "#c87960",
+                          color: idx === currentGroupIdx ? "rgba(255,255,255,0.9)" : "#d4957a",
                           marginBottom: 4,
                           fontWeight: "600",
                         }}>
@@ -1444,7 +1640,7 @@ export default function ChatPage() {
                         <div style={{
                           fontSize: 16,
                           lineHeight: 1.6,
-                          color: idx === currentGroupIdx ? "rgba(255,255,255,0.95)" : "#a85d48",
+                          color: idx === currentGroupIdx ? "rgba(255,255,255,0.95)" : "#d4957a",
                         }}>
                           <strong></strong> {hiddenAnswer.text.substring(0, 80)}
                         </div>

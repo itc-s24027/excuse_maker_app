@@ -82,6 +82,18 @@ export async function updateEvaluation({ excuseId, success }: { excuseId: string
 }
 
 /**
+ * 言い訳（excuse）の非表示フラグを更新する
+ * input: { excuseId, isDeleted }
+ */
+export async function updateExcuseVisibility({ excuseId, isDeleted }: { excuseId: string; isDeleted: boolean }) {
+    const updated = await prisma.excuse.update({
+        where: { id: excuseId },
+        data: { isDeleted },
+    });
+    return updated;
+}
+
+/**
  * チャット削除（論理削除：isDeletedフラグをtrueに設定）
  */
 export async function deleteChat({ chatId, userUid }: { chatId: string; userUid: string }) {

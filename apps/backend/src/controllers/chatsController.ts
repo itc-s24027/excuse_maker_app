@@ -73,6 +73,22 @@ export async function updateEvaluation(req: Request, res: Response) {
     }
 }
 
+// 非表示フラグ更新
+export async function updateExcuseVisibility(req: Request, res: Response) {
+    try {
+        const { excuseId, isDeleted } = req.body;
+
+        if (!excuseId || typeof isDeleted !== 'boolean') {
+            return res.status(400).json({ error: "入力が正しくありません" });
+        }
+
+        const updated = await chatService.updateExcuseVisibility({ excuseId, isDeleted });
+        res.status(200).json(updated);
+    } catch {
+        res.status(400).json({ error: "非表示フラグの更新に失敗しました" });
+    }
+}
+
 // チャット削除
 export async function deleteChat(req: Request, res: Response) {
     try {
