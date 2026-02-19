@@ -1,6 +1,0 @@
-// 目的: ルーティング、認証ミドルウェア、Gemini 呼び出し（またはそのモック）、
-// および DB（Prisma）との連携が正しく動くことを確認すること
-export {};
-// 方針: supertest で src/app.ts を叩く。
-// Firebase 管理トークン検証をモックし、Gemini サービスをスタブ化、Prisma はテスト用インメモリ／モックで代替。
-//# sourceMappingURL=chats.spec.js.map
