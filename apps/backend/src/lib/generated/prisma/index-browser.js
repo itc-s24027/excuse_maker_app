@@ -152,9 +152,6 @@ exports.Prisma.ExcuseScalarFieldEnum = {
 exports.Prisma.TagScalarFieldEnum = {
   id: 'id',
   title: 'title',
-  userId: 'userId',
-  isSystemTag: 'isSystemTag',
-  isDeleted: 'isDeleted',
   createdAt: 'createdAt'
 };
 
