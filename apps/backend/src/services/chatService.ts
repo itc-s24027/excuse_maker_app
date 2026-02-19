@@ -111,3 +111,163 @@ export async function deleteChat({ chatId, userUid }: { chatId: string; userUid:
         });
     });
 }
+
+/**
+ * 言い訳を保存（複数タグ付き）
+ */
+export async function saveExcuse({
+  chatId,
+  excuseText,
+  situation,
+  tagIds,
+}: {
+  chatId: string;
+  excuseText: string;
+  situation: string;
+  tagIds: string[];
+}) {
+  return prisma.$transaction(async (tx) => {
+    // 言い訳を作成
+    const excuse = await tx.excuse.create({
+      data: {
+        chatId,
+        excuseText,
+        situation,
+        success: true,
+      },
+    });
+
+    // タグを関連付け（複数）
+    if (tagIds && tagIds.length > 0) {
+      await tx.excuseTag.createMany({
+        data: tagIds.map((tagId) => ({
+          excuseId: excuse.id,
+          tagId,
+        })),
+      });
+    }
+
+    return { excuse };
+  });
+}
+
+/**
+ * いいねを追加
+ */
+export async function addLike({
+  excuseId,
+  userUid,
+}: {
+  excuseId: string;
+  userUid: string;
+}) {
+  const user = await prisma.user.findUnique({
+    where: { uid: userUid },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const excuse = await prisma.excuse.findUnique({
+    where: { id: excuseId },
+  });
+
+  if (!excuse) {
+    throw new Error("Excuse not found");
+  }
+
+  // 既にいいねしているかチェック
+  const existing = await prisma.like.findUnique({
+    where: { userId_excuseId: { userId: user.id, excuseId } },
+  });
+
+  if (existing) {
+    // 削除マークがあれば復活させる
+    if (existing.isDeleted) {
+      const updated = await prisma.like.update({
+        where: { id: existing.id },
+        data: { isDeleted: false },
+      });
+      return updated;
+    }
+    throw new Error("Already liked");
+  }
+
+  const like = await prisma.like.create({
+    data: {
+      userId: user.id,
+      excuseId,
+    },
+  });
+
+  return like;
+}
+
+/**
+ * いいねを削除（論理削除）
+ */
+export async function removeLike({
+  excuseId,
+  userUid,
+}: {
+  excuseId: string;
+  userUid: string;
+}) {
+  const user = await prisma.user.findUnique({
+    where: { uid: userUid },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const like = await prisma.like.findUnique({
+    where: { userId_excuseId: { userId: user.id, excuseId } },
+  });
+
+  if (!like) {
+    throw new Error("Like not found");
+  }
+
+  const updated = await prisma.like.update({
+    where: { id: like.id },
+    data: { isDeleted: true },
+  });
+
+  return updated;
+}
+
+/**
+ * 言い訳のいいね情報を取得
+ */
+export async function getLikeInfo({
+  excuseId,
+  userUid,
+}: {
+  excuseId: string;
+  userUid: string | undefined;
+}) {
+  const likes = await prisma.like.findMany({
+    where: {
+      excuseId,
+      isDeleted: false,
+    },
+  });
+
+  let userLiked = false;
+  if (userUid) {
+    const user = await prisma.user.findUnique({
+      where: { uid: userUid },
+    });
+
+    if (user) {
+      userLiked = likes.some((like) => like.userId === user.id);
+    }
+  }
+
+  return {
+    likeCount: likes.length,
+    userLiked,
+  };
+}

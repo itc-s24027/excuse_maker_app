@@ -23,4 +23,16 @@ router.put("/:chatId/visibility", authMiddleware, chatsController.updateExcuseVi
 // チャット削除
 router.delete("/:chatId", authMiddleware, chatsController.deleteChat);
 
+// 言い訳を保存（タグ付き）
+router.post("/:chatId/excuses", authMiddleware, chatsController.saveExcuse);
+
+// いいねを追加
+router.post("/excuses/:excuseId/like", authMiddleware, chatsController.addLike);
+
+// いいねを削除
+router.delete("/excuses/:excuseId/like", authMiddleware, chatsController.removeLike);
+
+// いいね情報を取得
+router.get("/excuses/:excuseId/like", chatsController.getLikeInfo);
+
 export default router;

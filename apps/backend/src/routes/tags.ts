@@ -10,6 +10,9 @@ router.get("/", tagsController.getAllTags);
 // タグ新規作成
 router.post("/", authMiddleware, tagsController.createTag);
 
+// タグ更新
+router.put("/:id", authMiddleware, tagsController.updateTag);
+
 // タグ削除
 router.delete("/:id", authMiddleware, tagsController.deleteTag);
 
@@ -25,6 +28,9 @@ router.delete(
   authMiddleware,
   tagsController.removeTagFromExcuse
 );
+
+// タグに関連する言い訳を取得
+router.get("/:tagId/excuses", tagsController.getExcusesByTag);
 
 export default router;
 

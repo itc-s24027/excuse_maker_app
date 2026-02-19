@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { apifetch } from "@/app/lib/apiClient";
 
 interface TagCreatorProps {
-  onTagCreated: (newTag: string) => void;
+  onTagCreated: (newTag: { id: string; title: string }) => void;
 }
 
 export default function TagCreator({ onTagCreated }: TagCreatorProps) {
@@ -41,7 +41,10 @@ export default function TagCreator({ onTagCreated }: TagCreatorProps) {
       }
 
       const data = await res.json();
-      const newTag = data.tag?.title || newTagTitle;
+      const newTag = {
+        id: data.tag?.id || "",
+        title: data.tag?.title || newTagTitle,
+      };
 
       onTagCreated(newTag);
       setNewTagTitle("");

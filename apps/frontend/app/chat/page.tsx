@@ -2,9 +2,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import LogoutButton from "@/app/_components/GoogleButton/logout";
 import SaveExcuseModal from "@/app/_components/chat/SaveExcuseModal";
 import { apifetch } from "../lib/apiClient";
+import { useCurrentUser } from "../lib/useCurrentUser";
 
 /*
   シンプルなチャット画面サンプル。
@@ -18,8 +20,18 @@ type Message = { id: string; role: "user" | "ai"; text: string };
 type Answer = { text: string; deleted: boolean; success: boolean; excuseId: string };
 type AnswerGroup = { promptId: string; prompt: string; answers: Answer[]; currentIndex: number };
 type Tag = { title: string; isSystemTag?: boolean };
+type Tag = {
+  id?: string;
+  title: string;
+  isSystemTag?: boolean;
+  userId?: string | null;
+  user?: { id: string; nickname: string | null; email: string } | null;
+  isDeleted?: boolean;
+};
 
 export default function ChatPage() {
+  const router = useRouter();
+  const { currentUser } = useCurrentUser();
   const [chats, setChats] = useState<ChatSummary[]>([]);
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
   // チャットID をキーにしてメッセージを管理
@@ -32,20 +44,29 @@ export default function ChatPage() {
   const [currentGroupIndex, setCurrentGroupIndex] = useState<Record<string, number>>({});
   const [showCreate, setShowCreate] = useState(false); // 画面読み込み時は自動表示しない
   const [tags] = useState<string[]>(["遅刻", "学校", "仕事"]);
+  const [showCreate, setShowCreate] = useState(true); // 画面読み込み時に自動表示
+  const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(false);
   const [showSuccessHistory, setShowSuccessHistory] = useState(false); // 成功の履歴表示制御
   const [showHiddenAnswers, setShowHiddenAnswers] = useState<Record<string, boolean>>({}); // 非表示の回答表示制御
   const [deleteConfirmChatId, setDeleteConfirmChatId] = useState<string | null>(null); // 削除確認ダイアログで削除対象のチャットID
   const [openMenuChatId, setOpenMenuChatId] = useState<string | null>(null); // 三点リーダーメニューが開いているチャットID
+  const [openMenuTagId, setOpenMenuTagId] = useState<string | null>(null); // タグメニューの開閉状態
+  const [editingTagId, setEditingTagId] = useState<string | null>(null); // 編集中のタグID
+  const [editingTagTitle, setEditingTagTitle] = useState(""); // 編集中のタグ名
 
-  // 現在選択されているチャットのメッセージを取得
+  // SaveExcuseModal 用の状態
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [lastExcuseText, setLastExcuseText] = useState("");
+
+  // 導出値: 現在選択されているチャットの情報
   const messages = selectedChat ? (chatMessages[selectedChat] ?? []) : [];
-  // 現在選択されているチャットのプロンプトを取得（selectedChatがnullの場合は一時的なプロンプトを取得）
   const prompt = selectedChat ? (chatPrompts[selectedChat] ?? "") : (chatPrompts["temp-chat"] ?? "");
-  // 現在選択されているチャットの回答グループ履歴を取得
   const answerHistory = selectedChat ? (chatAnswerHistory[selectedChat] ?? []) : [];
-  // 現在表示されている回答グループ
   const currentGroupIdx = selectedChat ? (currentGroupIndex[selectedChat] ?? -1) : -1;
+  const currentAnswerGroup = currentGroupIdx >= 0 ? answerHistory[currentGroupIdx] ?? null : null;
+  const validAnswers = currentAnswerGroup ? currentAnswerGroup.answers.filter((a: Answer) => !a.deleted) : [];
+  const currentAnswer = validAnswers.length > 0 ? validAnswers[0] : null;
   const currentAnswerGroup = currentGroupIdx >= 0 ? answerHistory[currentGroupIdx] : null;
   // 削除されていない回答のみを取得
   const validAnswers = currentAnswerGroup ? currentAnswerGroup.answers.filter(a => !a.deleted) : [];
@@ -271,6 +292,90 @@ export default function ChatPage() {
       abortController.abort();
     };
   }, []);
+
+  // タグ一覧を取得する関数
+  const fetchTags = async () => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+      if (!API_URL) {
+        console.error("API URLが未設定です");
+        return;
+      }
+
+      const res = await apifetch(`${API_URL}/tags`, {}, true);
+      if (!res.ok) {
+        throw new Error("タグ取得に失敗しました");
+      }
+
+      const data = await res.json();
+      const fetchedTags: Tag[] = (data.tags || []).map((tag: any) => ({
+        id: tag.id,
+        title: tag.title,
+        isSystemTag: tag.isSystemTag ?? false,
+        userId: tag.userId ?? null,
+        user: tag.user ?? null,
+        isDeleted: tag.isDeleted ?? false,
+      }));
+      setTags(fetchedTags);
+    } catch (err) {
+      console.error("タグ取得エラー:", err);
+    }
+  };
+
+  // コンポーネント初期化時にデータベースからタグを取得
+  useEffect(() => {
+    fetchTags();
+  }, []);
+
+  // SaveExcuseModal から保存処理
+  const handleSaveExcuse = async (selectedTags: Tag[]) => {
+    try {
+      if (!selectedChat || !currentAnswer) {
+        alert("チャットまたは言い訳が選択されていません");
+        return;
+      }
+
+      const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+      if (!API_URL) {
+        alert("API URLが未設定です");
+        return;
+      }
+
+      // タグオブジェクト配列からIDを抽出
+      const tagIds = selectedTags
+        .map((tag) => tag.id)
+        .filter((id): id is string => id !== undefined && id !== null);
+
+      console.log("保存するタグID:", tagIds);
+
+      // 言い訳を保存（複数タグ付き）
+      const res = await apifetch(`${API_URL}/chats/${selectedChat}/excuses`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          excuseText: currentAnswer.text,
+          situation: prompt,
+          tagIds: tagIds, // タグIDの配列
+        }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`保存に失敗しました: ${errorText}`);
+      }
+
+      const data = await res.json();
+      console.log("言い訳を保存しました:", data);
+
+      setShowSaveModal(false);
+      alert("言い訳を保存しました！");
+    } catch (err) {
+      console.error("言い訳保存エラー:", err);
+      alert(err instanceof Error ? err.message : "言い訳の保存に失敗しました");
+    }
+  };
 
   // プロンプト送信処理
   const sendPrompt = async () => {
@@ -558,6 +663,27 @@ export default function ChatPage() {
     } catch (error) {
       console.error("非表示フラグ保存エラー:", error);
     }
+    // SaveExcuseModalを表示
+    if (currentAnswer) {
+      setLastExcuseText(currentAnswer.text);
+      setShowSaveModal(true);
+    }
+
+    setChatAnswerHistory((prev) => {
+      const history = [...(prev[selectedChat] ?? [])];
+      const groupIndex = currentGroupIdx;
+      if (groupIndex >= 0 && groupIndex < history.length) {
+        const group = history[groupIndex];
+        const newAnswers = [...group.answers];
+        // 最初の削除されていない回答に成功フラグを立てる
+        const validIndex = newAnswers.findIndex(a => !a.deleted);
+        if (validIndex >= 0) {
+          newAnswers[validIndex] = { ...newAnswers[validIndex], success: true };
+        }
+        history[groupIndex] = { ...group, answers: newAnswers };
+      }
+      return { ...prev, [selectedChat]: history };
+    });
   };
 
   // 非表示を解除（論理削除を取り消す）
@@ -914,6 +1040,83 @@ export default function ChatPage() {
     } catch (error) {
       console.error("チャット削除エラー:", error);
       alert("チャット削除に失敗しました");
+    }
+  };
+
+  // タグをクリックしてランキング画面へ遷移
+  const handleTagClick = (tagId?: string) => {
+    if (tagId) {
+      router.push(`/tag-ranking/${tagId}`);
+    }
+  };
+
+  // タグを削除
+  const handleDeleteTag = async (tagId?: string) => {
+    if (!tagId) return;
+
+    if (!confirm("このタグを削除してもよろしいですか？")) {
+      return;
+    }
+
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+      if (!API_URL) {
+        alert("API URLが未設定です");
+        return;
+      }
+
+      const res = await apifetch(`${API_URL}/tags/${tagId}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`削除に失敗しました: ${errorText}`);
+      }
+
+      alert("タグを削除しました！");
+      setOpenMenuTagId(null);
+      // タグ一覧を再取得
+      await fetchTags();
+    } catch (err) {
+      console.error("タグ削除エラー:", err);
+      alert(err instanceof Error ? err.message : "タグの削除に失敗しました");
+    }
+  };
+
+  // タグ名を更新
+  const handleUpdateTag = async (tagId?: string) => {
+    if (!tagId || !editingTagTitle.trim()) return;
+
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+      if (!API_URL) {
+        alert("API URLが未設定です");
+        return;
+      }
+
+      const res = await apifetch(`${API_URL}/tags/${tagId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ title: editingTagTitle.trim() }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`更新に失敗しました: ${errorText}`);
+      }
+
+      alert("タグを更新しました！");
+      setEditingTagId(null);
+      setEditingTagTitle("");
+      setOpenMenuTagId(null);
+      // タグ一覧を再取得
+      await fetchTags();
+    } catch (err) {
+      console.error("タグ更新エラー:", err);
+      alert(err instanceof Error ? err.message : "タグの更新に失敗しました");
     }
   };
 
@@ -1665,42 +1868,311 @@ export default function ChatPage() {
         border: "2px solid #c3af96",
         display: "flex",
         flexDirection: "column",
+        overflowY: "auto",
+        gap: 16,
       }}>
-        <h4 style={{
-          fontSize: "1rem",
-          fontWeight: "700",
-          color: "#665440",
-          marginBottom: "12px",
-        }}>
-          タグごとのベスト・オブ・言い訳
-        </h4>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {tags.map((t) => (
-            <div
-              key={t}
-              style={{
-                background: "#fff",
-                padding: 10,
-                borderRadius: 8,
-                border: "1px solid #dfc9ab",
-                color: "#665440",
-                fontWeight: "500",
-                cursor: "pointer",
-                transition: "all 0.25s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#c3af96";
-                e.currentTarget.style.color = "#fff";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#fff";
-                e.currentTarget.style.color = "#665440";
-              }}
-            >
-              {t}
-            </div>
-          ))}
+        {/* あなたのタグ */}
+        <div>
+          <h4 style={{
+            fontSize: "0.9rem",
+            fontWeight: "700",
+            color: "#665440",
+            marginBottom: "8px",
+          }}>
+            あなたのタグ
+          </h4>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {(() => {
+              const myTags = tags.filter((t) => !t.isSystemTag && currentUser && t.userId === currentUser.id);
+              return myTags.length > 0 ? (
+                myTags.map((t) => (
+                  <div key={t.id || t.title}>
+                    {editingTagId === t.id ? (
+                      // 編集モード
+                      <div style={{
+                        background: "#fff",
+                        padding: 10,
+                        borderRadius: 8,
+                        border: "1px solid #dfc9ab",
+                        display: "flex",
+                        gap: 8,
+                        alignItems: "center",
+                      }}>
+                        <input
+                          type="text"
+                          value={editingTagTitle}
+                          onChange={(e) => setEditingTagTitle(e.target.value)}
+                          style={{
+                            flex: 1,
+                            padding: 6,
+                            border: "1px solid #dfc9ab",
+                            borderRadius: 4,
+                            fontSize: "0.9rem",
+                          }}
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => handleUpdateTag(t.id)}
+                          style={{
+                            background: "#4CAF50",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: 4,
+                            padding: "6px 10px",
+                            cursor: "pointer",
+                            fontSize: "12px",
+                            fontWeight: "600",
+                          }}
+                        >
+                          保存
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingTagId(null);
+                            setEditingTagTitle("");
+                          }}
+                          style={{
+                            background: "#999",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: 4,
+                            padding: "6px 10px",
+                            cursor: "pointer",
+                            fontSize: "12px",
+                            fontWeight: "600",
+                          }}
+                        >
+                          キャンセル
+                        </button>
+                      </div>
+                    ) : (
+                      // 通常表示モード
+                      <div style={{
+                        background: "#fff",
+                        padding: 10,
+                        borderRadius: 8,
+                        border: "1px solid #dfc9ab",
+                        color: "#665440",
+                        fontWeight: "500",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: 8,
+                        position: "relative",
+                      }}>
+                        <span
+                          style={{
+                            flex: 1,
+                            cursor: "pointer",
+                            transition: "all 0.25s ease",
+                          }}
+                          onClick={() => handleTagClick(t.id)}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "#c3af96";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = "#665440";
+                          }}
+                        >
+                          {t.title}
+                        </span>
+                        {/* メニューボタン */}
+                        <button
+                          onClick={() => setOpenMenuTagId(openMenuTagId === t.id ? null : (t.id || null))}
+                          style={{
+                            background: "transparent",
+                            color: "#665440",
+                            border: "none",
+                            cursor: "pointer",
+                            fontSize: "18px",
+                            fontWeight: "bold",
+                            padding: "4px 8px",
+                            transition: "all 0.2s ease",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "#c3af96";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = "#665440";
+                          }}
+                        >
+                          ⋯
+                        </button>
+
+                        {/* ドロップダウンメニュー */}
+                        {openMenuTagId === t.id && (
+                          <div style={{
+                            position: "absolute",
+                            top: "100%",
+                            right: 0,
+                            background: "#fff",
+                            border: "1px solid #dfc9ab",
+                            borderRadius: 6,
+                            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
+                            zIndex: 100,
+                            marginTop: 4,
+                          }}>
+                            <button
+                              onClick={() => {
+                                setEditingTagId(t.id || null);
+                                setEditingTagTitle(t.title);
+                              }}
+                              style={{
+                                display: "block",
+                                width: "100%",
+                                padding: "10px 16px",
+                                background: "transparent",
+                                border: "none",
+                                color: "#665440",
+                                cursor: "pointer",
+                                fontSize: "14px",
+                                fontWeight: "500",
+                                textAlign: "left",
+                                transition: "all 0.2s ease",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = "#f5f0e8";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = "transparent";
+                              }}
+                            >
+                              名前の変更
+                            </button>
+                            <button
+                              onClick={() => handleDeleteTag(t.id)}
+                              style={{
+                                display: "block",
+                                width: "100%",
+                                padding: "10px 16px",
+                                background: "transparent",
+                                border: "none",
+                                color: "#ff6b6b",
+                                cursor: "pointer",
+                                fontSize: "14px",
+                                fontWeight: "500",
+                                textAlign: "left",
+                                transition: "all 0.2s ease",
+                                borderTop: "1px solid #f0e8e0",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = "#ffe0e0";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = "transparent";
+                              }}
+                            >
+                              削除
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p style={{
+                  fontSize: "0.85rem",
+                  color: "#9a6044",
+                  margin: 0,
+                  fontStyle: "italic",
+                }}>
+                  タグがありません
+                </p>
+              );
+            })()}
+          </div>
         </div>
+
+        {/* システムタグ */}
+        {(() => {
+          const systemTags = tags.filter((t) => t.isSystemTag);
+          return systemTags.length > 0 ? (
+            <div>
+              <h4 style={{
+                fontSize: "0.9rem",
+                fontWeight: "700",
+                color: "#665440",
+                marginBottom: "8px",
+              }}>
+                システムタグ
+              </h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {systemTags.map((t) => (
+                  <div
+                    key={t.id || t.title}
+                    style={{
+                      background: "#fff",
+                      padding: 10,
+                      borderRadius: 8,
+                      border: "1px solid #dfc9ab",
+                      color: "#665440",
+                      fontWeight: "500",
+                      cursor: "pointer",
+                      transition: "all 0.25s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#c3af96";
+                      e.currentTarget.style.color = "#fff";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "#fff";
+                      e.currentTarget.style.color = "#665440";
+                    }}
+                    onClick={() => handleTagClick(t.id)}
+                  >
+                    {t.title}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null;
+        })()}
+
+        {/* ユーザータグ */}
+        {(() => {
+          const userTags = tags.filter((t) => !t.isSystemTag && t.userId !== null && t.userId !== undefined && (!currentUser || t.userId !== currentUser.id));
+          return userTags.length > 0 ? (
+            <div>
+              <h4 style={{
+                fontSize: "0.9rem",
+                fontWeight: "700",
+                color: "#665440",
+                marginBottom: "8px",
+              }}>
+                他のユーザーのタグ
+              </h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {userTags.map((t) => (
+                  <div
+                    key={t.id || t.title}
+                    style={{
+                      background: "#fff",
+                      padding: 10,
+                      borderRadius: 8,
+                      border: "1px solid #dfc9ab",
+                      color: "#665440",
+                      fontWeight: "500",
+                      cursor: "pointer",
+                      transition: "all 0.25s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#c3af96";
+                      e.currentTarget.style.color = "#fff";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "#fff";
+                      e.currentTarget.style.color = "#665440";
+                    }}
+                    onClick={() => handleTagClick(t.id)}
+                  >
+                    {t.title}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null;
+        })()}
       </aside>
 
       {/* Create モーダル */}
@@ -1719,6 +2191,7 @@ export default function ChatPage() {
         onClose={() => setShowSaveModal(false)}
         onSave={handleSaveExcuse}
         availableTags={tags}
+        onTagsUpdated={fetchTags}
       />
 
       {/* チャット削除確認ダイアログ */}

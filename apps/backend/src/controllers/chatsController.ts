@@ -102,3 +102,81 @@ export async function deleteChat(req: Request, res: Response) {
         res.status(403).json({ error: "削除できませんでした" });
     }
 }
+
+// 言い訳を保存（タグ付き）
+export async function saveExcuse(req: Request, res: Response) {
+    try {
+        const { excuseText, situation, tagIds } = req.body;
+        const chatId = req.params.chatId;
+
+        if (!excuseText || !chatId) {
+            return res.status(400).json({ error: "言い訳とチャットIDが必須です" });
+        }
+
+        const result = await chatService.saveExcuse({
+            chatId,
+            excuseText,
+            situation: situation ?? "",
+            tagIds: Array.isArray(tagIds) ? tagIds : [],
+        });
+
+        return res.status(201).json(result);
+    } catch (err: any) {
+        console.error("saveExcuse error:", err);
+        return res.status(500).json({ error: "言い訳の保存に失敗しました", details: err?.message ?? String(err) });
+    }
+}
+
+// いいねを追加
+export async function addLike(req: Request, res: Response) {
+    try {
+        const excuseId = req.params.excuseId;
+        const userUid = req.user?.uid ?? "";
+
+        if (!excuseId) {
+            return res.status(400).json({ error: "言い訳IDが必須です" });
+        }
+
+        const like = await chatService.addLike({ excuseId, userUid });
+        return res.status(201).json({ like, message: "いいねしました" });
+    } catch (err: any) {
+        console.error("addLike error:", err);
+        return res.status(500).json({ error: err.message ?? "いいねに失敗しました" });
+    }
+}
+
+// いいねを削除
+export async function removeLike(req: Request, res: Response) {
+    try {
+        const excuseId = req.params.excuseId;
+        const userUid = req.user?.uid ?? "";
+
+        if (!excuseId) {
+            return res.status(400).json({ error: "言い訳IDが必須です" });
+        }
+
+        await chatService.removeLike({ excuseId, userUid });
+        return res.status(200).json({ message: "いいねを取り消しました" });
+    } catch (err: any) {
+        console.error("removeLike error:", err);
+        return res.status(500).json({ error: err.message ?? "いいね取り消しに失敗しました" });
+    }
+}
+
+// 言い訳のいいね情報を取得
+export async function getLikeInfo(req: Request, res: Response) {
+    try {
+        const excuseId = req.params.excuseId;
+        const userUid = req.user?.uid ?? undefined;
+
+        if (!excuseId) {
+            return res.status(400).json({ error: "言い訳IDが必須です" });
+        }
+
+        const likeInfo = await chatService.getLikeInfo({ excuseId, userUid });
+        return res.status(200).json(likeInfo);
+    } catch (err: any) {
+        console.error("getLikeInfo error:", err);
+        return res.status(500).json({ error: err.message ?? "いいね情報取得に失敗しました" });
+    }
+}

@@ -3,8 +3,14 @@ import { getIdToken } from "./getIdToken";
 
 export async function apifetch(
     url: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    skipAuth: boolean = false
 ) {
+    // skipAuth が true の場合はトークンなしで fetch
+    if (skipAuth) {
+        return fetch(url, options);
+    }
+
     // 最初のトークンを取得
     let token = await getIdToken();
     if (!token) {

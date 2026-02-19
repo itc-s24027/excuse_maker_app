@@ -23,7 +23,7 @@
 .catIllustration {
     width: 500px;
     height: 400px;
-    background-image: url('/nekoirasuto1.png');
+    background-image: url('/mikeneko.png');
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
@@ -56,7 +56,7 @@
 
 .formHeader h1 {
     font-family: 'Nunito', sans-serif;
-    font-size: 4rem;
+    font-size: 5rem;
     font-weight: 800;
     color: #665440;
     letter-spacing: -1px;
