@@ -28,11 +28,13 @@ export default function ChatPage() {
   const [chatAnswerHistory, setChatAnswerHistory] = useState<Record<string, AnswerGroup[]>>({});
   // 現在表示中の回答グループのインデックス
   const [currentGroupIndex, setCurrentGroupIndex] = useState<Record<string, number>>({});
-  const [showCreate, setShowCreate] = useState(true); // 画面読み込み時に自動表示
+  const [showCreate, setShowCreate] = useState(false); // 画面読み込み時は自動表示しない
   const [tags] = useState<string[]>(["遅刻", "学校", "仕事"]);
   const [loading, setLoading] = useState(false);
   const [showSuccessHistory, setShowSuccessHistory] = useState(false); // 成功の履歴表示制御
   const [showHiddenAnswers, setShowHiddenAnswers] = useState<Record<string, boolean>>({}); // 非表示の回答表示制御
+  const [deleteConfirmChatId, setDeleteConfirmChatId] = useState<string | null>(null); // 削除確認ダイアログで削除対象のチャットID
+  const [openMenuChatId, setOpenMenuChatId] = useState<string | null>(null); // 三点リーダーメニューが開いているチャットID
 
   // 現在選択されているチャットのメッセージを取得
   const messages = selectedChat ? (chatMessages[selectedChat] ?? []) : [];
@@ -52,17 +54,182 @@ export default function ChatPage() {
     ? (currentAnswerGroup.answers[currentAnswerIndex].deleted ? null : currentAnswerGroup.answers[currentAnswerIndex])
     : (validAnswers.length > 0 ? validAnswers[validAnswers.length - 1] : null);
 
+  // チャットが選択された時に詳細情報を取得
   useEffect(() => {
-    // 新しいチャットが選択された時、初期メッセージを設定（まだない場合のみ）
-    if (selectedChat && !chatMessages[selectedChat]) {
-      setChatMessages((prev) => ({
-        ...prev,
-        [selectedChat]: [
-          { id: "m1", role: "ai", text: "ようこそ。要望を入力してください" },
-        ],
-      }));
+    if (!selectedChat || chatMessages[selectedChat]) {
+      // 既にメッセージが読み込まれている場合はスキップ
+      return;
     }
-  }, [selectedChat, chatMessages]);
+
+    let isMounted = true;
+    const abortController = new AbortController();
+
+    const loadChatDetail = async () => {
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+        if (!API_URL) {
+          console.error("APIのURLが設定されていません");
+          return;
+        }
+
+        const response = await apifetch(`${API_URL}/chats/${selectedChat}`, {
+          method: "GET",
+          signal: abortController.signal,
+        });
+
+        if (!response.ok) {
+          console.error("チャット詳細取得エラー:", response.status);
+          return;
+        }
+
+        const chatDetail = await response.json();
+
+        // コンポーネントがアンマウントされた場合は処理を中止
+        if (!isMounted) return;
+
+        // チャットのメッセージを初期化
+        const initialMessages: Message[] = [
+          { id: "m1", role: "ai", text: "ようこそ。要望を入力してください" },
+        ];
+
+        setChatMessages((prev) => ({
+          ...prev,
+          [selectedChat]: initialMessages,
+        }));
+
+        let answerGroups: AnswerGroup[] = [];
+
+        // 新スキーマ（ExcusePrompt/ExcuseAnswer）をチェック
+        if (chatDetail.excusePrompts && Array.isArray(chatDetail.excusePrompts)) {
+          answerGroups = chatDetail.excusePrompts.map((prompt: any, idx: number) => ({
+            promptId: prompt.id || String(idx),
+            prompt: prompt.situation || "", // プロンプト
+            answers: prompt.answers && Array.isArray(prompt.answers)
+              ? prompt.answers.map((answer: any) => ({
+                  text: answer.excuseText, // AIの回答
+                  deleted: answer.isDeleted || false, // 非表示フラグ
+                  success: answer.success || false, // 成功フラグ
+                }))
+              : [],
+            currentIndex: 0,
+          }));
+        }
+        // フォールバック：古いスキーマ（Excuse）から取得
+        else if (chatDetail.excuses && Array.isArray(chatDetail.excuses)) {
+          answerGroups = chatDetail.excuses.map((excuse: any, idx: number) => ({
+            promptId: excuse.id || String(idx),
+            prompt: excuse.situation || "", // situationがプロンプト
+            answers: [
+              {
+                text: excuse.excuseText, // excuseTextがAIの回答
+                deleted: excuse.isDeleted || false,
+                success: excuse.success || false,
+              }
+            ],
+            currentIndex: 0,
+          }));
+        }
+
+        if (answerGroups.length > 0) {
+          setChatAnswerHistory((prev) => ({
+            ...prev,
+            [selectedChat]: answerGroups,
+          }));
+
+          // 最後のプロンプトをプロンプト入力エリアに設定
+          const lastPrompt = answerGroups[answerGroups.length - 1].prompt;
+          setChatPrompts((prev) => ({
+            ...prev,
+            [selectedChat]: lastPrompt,
+          }));
+
+          // 最初の回答グループを表示
+          setCurrentGroupIndex((prev) => ({
+            ...prev,
+            [selectedChat]: 0,
+          }));
+        }
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.log("チャット詳細取得がキャンセルされました");
+          return;
+        }
+        console.error("チャット詳細取得エラー:", error);
+      }
+    };
+
+    loadChatDetail();
+
+    // クリーンアップ関数：アンマウント時またはselectedChatが変更された時にリクエストをキャンセル
+    return () => {
+      isMounted = false;
+      abortController.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedChat]);
+
+  // ページマウント時にチャットリストを取得
+  useEffect(() => {
+    let isMounted = true;
+    const abortController = new AbortController();
+
+    const loadChats = async () => {
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+        if (!API_URL) {
+          console.error("APIのURLが設定されていません");
+          return;
+        }
+
+        const response = await apifetch(`${API_URL}/chats/user`, {
+          method: "GET",
+          signal: abortController.signal,
+        });
+
+        if (!response.ok) {
+          console.error("チャットリスト取得エラー:", response.status);
+          return;
+        }
+
+        const data = await response.json();
+
+        // コンポーネントがアンマウントされた場合は処理を中止
+        if (!isMounted) return;
+
+        // データはChat[] の配列
+        if (Array.isArray(data)) {
+          const chatsFromDB = data.map((chat: any) => ({
+            id: chat.id,
+            title: chat.title,
+          }));
+          setChats(chatsFromDB);
+
+          // 最初のチャットを自動選択
+          if (chatsFromDB.length > 0) {
+            setSelectedChat(chatsFromDB[0].id);
+            setShowCreate(false);
+          } else {
+            // チャットがない場合は作成モーダルを表示
+            setShowCreate(true);
+          }
+        }
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.log("チャットリスト取得がキャンセルされました");
+          return;
+        }
+        console.error("チャットリスト取得エラー:", error);
+      }
+    };
+
+    loadChats();
+
+    // クリーンアップ関数
+    return () => {
+      isMounted = false;
+      abortController.abort();
+    };
+  }, []);
 
   // プロンプト送信処理
   const sendPrompt = async () => {
@@ -493,6 +660,74 @@ export default function ChatPage() {
     }
   };
 
+  // チャット削除処理
+  const handleDeleteChat = async (chatId: string) => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+      if (!API_URL) {
+        alert("APIのURLが設定されていません");
+        return;
+      }
+
+      const response = await apifetch(`${API_URL}/chats/${chatId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        console.error("チャット削除エラー:", response.status);
+        alert("チャット削除に失敗しました");
+        return;
+      }
+
+      // チャットリストから削除
+      const updatedChats = chats.filter((chat) => chat.id !== chatId);
+      setChats(updatedChats);
+
+      // 削除されたチャットの関連データをメモリから削除
+      setChatMessages((prev) => {
+        const updated = { ...prev };
+        delete updated[chatId];
+        return updated;
+      });
+      setChatPrompts((prev) => {
+        const updated = { ...prev };
+        delete updated[chatId];
+        return updated;
+      });
+      setChatAnswerHistory((prev) => {
+        const updated = { ...prev };
+        delete updated[chatId];
+        return updated;
+      });
+      setCurrentGroupIndex((prev) => {
+        const updated = { ...prev };
+        delete updated[chatId];
+        return updated;
+      });
+
+      // 削除したチャットが選択されていた場合は選択を解除
+      if (selectedChat === chatId) {
+        setSelectedChat(null);
+
+        // 残っているチャットがある場合は最初のチャットを自動選択
+        if (updatedChats.length > 0) {
+          setSelectedChat(updatedChats[0].id);
+          setShowCreate(false);
+        } else {
+          // チャットがない場合のみモーダルを表示
+          setShowCreate(true);
+        }
+      }
+
+      // ダイアログを閉じる
+      setDeleteConfirmChatId(null);
+      setOpenMenuChatId(null);
+    } catch (error) {
+      console.error("チャット削除エラー:", error);
+      alert("チャット削除に失敗しました");
+    }
+  };
+
   return (
     <div style={{ display: "flex", height: "100vh", gap: 12, padding: 12 }}>
       {/* 左サイドバー */}
@@ -531,17 +766,18 @@ export default function ChatPage() {
           {chats.map((c) => (
             <div
               key={c.id}
-              onClick={() => setSelectedChat(c.id)}
               style={{
+                display: "flex",
+                alignItems: "center",
                 padding: 10,
                 marginTop: 8,
                 background: c.id === selectedChat ? "#c3af96" : "#fff",
                 borderRadius: 8,
-                cursor: "pointer",
                 border: "1px solid #dfc9ab",
                 color: c.id === selectedChat ? "#fff" : "#665440",
                 fontWeight: c.id === selectedChat ? "600" : "500",
                 transition: "all 0.25s ease",
+                gap: 8,
               }}
               onMouseEnter={(e) => {
                 if (c.id !== selectedChat) {
@@ -554,7 +790,80 @@ export default function ChatPage() {
                 }
               }}
             >
-              {c.title}
+              {/* チャットタイトル */}
+              <div
+                onClick={() => setSelectedChat(c.id)}
+                style={{
+                  flex: 1,
+                  cursor: "pointer",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {c.title}
+              </div>
+
+              {/* 三点リーダーボタン */}
+              <div style={{ position: "relative" }}>
+                <button
+                  className="no-hover-effect"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenMenuChatId(openMenuChatId === c.id ? null : c.id);
+                  }}
+                  style={{
+                    padding: "4px 8px",
+                    fontSize: "18px",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    color: c.id === selectedChat ? "#fff" : "#665440",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  ⋯
+                </button>
+
+                {/* メニュー */}
+                {openMenuChatId === c.id && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "100%",
+                      right: 0,
+                      background: "#fff",
+                      border: "1px solid #dfc9ab",
+                      borderRadius: "6px",
+                      padding: "8px 0",
+                      minWidth: "120px",
+                      zIndex: 10,
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                    }}
+                  >
+                    <button
+                      className="no-hover-effect"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteConfirmChatId(c.id);
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: "8px 16px",
+                        background: "transparent",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "#c87960",
+                        fontSize: "0.9rem",
+                        textAlign: "left",
+                        transition: "all 0.2s ease",
+                      }}
+                    >
+                      削除
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -1203,6 +1512,86 @@ export default function ChatPage() {
           onCreate={createChat}
           isFirstChat={chats.length === 0}
         />
+      )}
+
+      {/* チャット削除確認ダイアログ */}
+      {deleteConfirmChatId && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "rgba(0, 0, 0, 0.4)",
+          zIndex: 1001,
+        }}>
+          <div style={{
+            background: "#fff6e9",
+            padding: "2rem",
+            borderRadius: "16px",
+            maxWidth: "400px",
+            border: "2px solid #c3af96",
+            boxShadow: "0 8px 24px rgba(102, 84, 64, 0.2)",
+          }}>
+            <h3 style={{
+              fontSize: "1.3rem",
+              fontWeight: "700",
+              color: "#665440",
+              marginBottom: "1rem",
+              textAlign: "center",
+            }}>
+              本当にチャットを削除しますか？
+            </h3>
+            <p style={{
+              fontSize: "0.95rem",
+              color: "#9a6044",
+              marginBottom: "1.5rem",
+              textAlign: "center",
+            }}>
+              このアクションは取り消せません。
+            </p>
+            <div style={{
+              display: "flex",
+              gap: "12px",
+              justifyContent: "center",
+            }}>
+              <button
+                onClick={() => {
+                  handleDeleteChat(deleteConfirmChatId);
+                }}
+                style={{
+                  padding: "10px 24px",
+                  fontSize: "1rem",
+                  fontWeight: "600",
+                  color: "#fff",
+                  background: "#c87960",
+                  border: "2px solid #c87960",
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                  transition: "all 0.25s ease",
+                }}
+              >
+                はい
+              </button>
+              <button
+                onClick={() => setDeleteConfirmChatId(null)}
+                style={{
+                  padding: "10px 24px",
+                  fontSize: "1rem",
+                  fontWeight: "600",
+                  color: "#665440",
+                  background: "#fff",
+                  border: "2px solid #c3af96",
+                  borderRadius: "10px",
+                  cursor: "pointer",
+                  transition: "all 0.25s ease",
+                }}
+              >
+                いいえ
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

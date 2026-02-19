@@ -68,6 +68,12 @@ button:disabled {
     cursor: not-allowed;
 }
 
+/* 三点リーダーと削除ボタンのホバー効果を無効化 */
+.no-hover-effect:hover:not(:disabled) {
+    transform: none;
+    box-shadow: none;
+}
+
 input, textarea {
     font-family: var(--font-noto-sans-jp);
     border-color: var(--border-color);

@@ -82,7 +82,7 @@ export async function updateEvaluation({ excuseId, success }: { excuseId: string
 }
 
 /**
- * チャット削除（ユーザー所有チェックを行い、関連する言い訳を削除）
+ * チャット削除（論理削除：isDeletedフラグをtrueに設定）
  */
 export async function deleteChat({ chatId, userUid }: { chatId: string; userUid: string }) {
     return prisma.$transaction(async (tx) => {
@@ -92,7 +92,10 @@ export async function deleteChat({ chatId, userUid }: { chatId: string; userUid:
         if ((chat.user as any)?.uid && (chat.user as any).uid !== userUid) {
             throw new Error("Forbidden");
         }
-        await tx.excuse.deleteMany({ where: { chatId } });
-        await tx.chat.delete({ where: { id: chatId } });
+        // 論理削除：isDeletedをtrueに設定
+        await tx.chat.update({
+            where: { id: chatId },
+            data: { isDeleted: true },
+        });
     });
 }
