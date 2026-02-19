@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "tsx watch src/app.ts",
     "build": "prisma generate && tsc",
-    "start": "node dist/app.js"
+    "start": "node dist/app.js",
+    "postinstall": "prisma generate"
   },
   "keywords": [],
   "author": "",
@@ -15,8 +16,9 @@
   "packageManager": "pnpm@10.24.0",
   "dependencies": {
     "@google/genai": "^1.31.0",
-    "@prisma/adapter-pg": "^7.3.0",
+    "@prisma/adapter-pg": "^7.4.0",
     "@prisma/client": "^7.4.0",
+    "@prisma/client-runtime-utils": "^7.4.0",
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "firebase-admin": "^13.6.0",
