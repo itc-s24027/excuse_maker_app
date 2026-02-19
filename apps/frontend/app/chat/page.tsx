@@ -1331,9 +1331,12 @@ export default function ChatPage() {
         borderRadius: 12,
         border: "2px solid #c3af96",
         minWidth: 0,
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
       }} className={styles.chatArea}>
-        <div style={{ maxWidth: 900, margin: "0 auto" , paddingTop: 20}}>
-          <div style={{ marginBottom: 16 }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", paddingTop: 20, flex: 1, overflow: "auto", width: "100%" }}>
+          <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: "12px" }}>
               <img
                 src="/猫アイコン1.png"
@@ -1355,6 +1358,8 @@ export default function ChatPage() {
               gap: 12,
               alignItems: "center",
               margin: "16px 0",
+              flex: 1,
+              minHeight: 0,
             }}>
               {/* 前の回答ボタン */}
               <button
@@ -1398,13 +1403,15 @@ export default function ChatPage() {
                 lineHeight: 1.8,
                 opacity: currentAnswer?.deleted && showHiddenAnswers[selectedChat!] ? 0.5 : 1,
                 position: "relative",
-                minHeight: 140,
+                height: 280,
+                maxHeight: 280,
                 display: "flex",
                 alignItems: "flex-start",
                 gap: 12,
                 wordWrap: "break-word",
                 overflowWrap: "break-word",
                 whiteSpace: "pre-wrap",
+                overflow: "auto",
               }}>
                 {currentAnswer?.deleted && showHiddenAnswers[selectedChat!] && (
                   <div style={{
@@ -1589,7 +1596,7 @@ export default function ChatPage() {
             </button>
           </div>
 
-          <div style={{ marginTop: 28 }}>
+          <div style={{ marginTop: 28, display: "flex", flexDirection: "column", gap: 12 }}>
 
             <label style={{
               display: "block",
@@ -1626,7 +1633,7 @@ export default function ChatPage() {
               }}
               style={{
                 width: "100%",
-                minHeight: 140,
+                height: 140,
                 borderRadius: 10,
                 padding: 14,
                 fontSize: 20,
@@ -1634,7 +1641,7 @@ export default function ChatPage() {
                 fontFamily: "var(--font-noto-sans-jp)",
                 color: "#665440",
                 background: "#fff",
-                resize: "vertical",
+                resize: "none",
                 transition: "all 0.25s ease",
               }}
               onFocus={(e) => {
