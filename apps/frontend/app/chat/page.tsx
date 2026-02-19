@@ -592,132 +592,115 @@ export default function ChatPage() {
                 </span>
               )}
             </div>
-            {currentAnswer || (showHiddenAnswers[selectedChat!] && currentAnswerGroup && currentAnswerGroup.answers.some(a => a.deleted)) ? (
-              <div style={{
-                display: "flex",
-                gap: 12,
-                alignItems: "center",
-                margin: "16px 0",
-              }}>
-                {/* 前の回答ボタン */}
-                <button
-                  onClick={showPreviousAnswer}
-                  disabled={!currentAnswerGroup || currentAnswerGroup.answers.length <= 1}
-                  style={{
-                    flex: "0 0 auto",
-                    padding: "12px 16px",
-                    fontSize: "1.2rem",
-                    fontWeight: "600",
-                    color: !currentAnswerGroup || currentAnswerGroup.answers.length <= 1 ? "#ccc" : "#fff",
-                    background: !currentAnswerGroup || currentAnswerGroup.answers.length <= 1 ? "#ddd" : "#665440",
-                    border: "none",
-                    borderRadius: "10px",
-                    cursor: !currentAnswerGroup || currentAnswerGroup.answers.length <= 1 ? "not-allowed" : "pointer",
-                    transition: "all 0.25s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (currentAnswerGroup && currentAnswerGroup.answers.length > 1) {
-                      e.currentTarget.style.background = "#9a6044";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (currentAnswerGroup && currentAnswerGroup.answers.length > 1) {
-                      e.currentTarget.style.background = "#665440";
-                    }
-                  }}
-                >
-                  ◀
-                </button>
+            <div style={{
+              display: "flex",
+              gap: 12,
+              alignItems: "center",
+              margin: "16px 0",
+            }}>
+              {/* 前の回答ボタン */}
+              <button
+                onClick={showPreviousAnswer}
+                disabled={!currentAnswerGroup || currentAnswerGroup.answers.length <= 1}
+                style={{
+                  flex: "0 0 auto",
+                  padding: "12px 16px",
+                  fontSize: "1.2rem",
+                  fontWeight: "600",
+                  color: !currentAnswerGroup || currentAnswerGroup.answers.length <= 1 ? "#ccc" : "#fff",
+                  background: !currentAnswerGroup || currentAnswerGroup.answers.length <= 1 ? "#ddd" : "#665440",
+                  border: "none",
+                  borderRadius: "10px",
+                  cursor: !currentAnswerGroup || currentAnswerGroup.answers.length <= 1 ? "not-allowed" : "pointer",
+                  transition: "all 0.25s ease",
+                }}
+                onMouseEnter={(e) => {
+                  if (currentAnswerGroup && currentAnswerGroup.answers.length > 1) {
+                    e.currentTarget.style.background = "#9a6044";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (currentAnswerGroup && currentAnswerGroup.answers.length > 1) {
+                    e.currentTarget.style.background = "#665440";
+                  }
+                }}
+              >
+                ◀
+              </button>
 
-                {/* AIの回答 */}
-                <div key="current-answer" style={{
-                  flex: 1,
-                  padding: 20,
-                  background: currentAnswer?.success ? "var(--success-bg-light)" : "#fff",
-                  borderRadius: 12,
-                  fontSize: 25,
-                  color: currentAnswer?.deleted && showHiddenAnswers[selectedChat!] ? "#999" : "#665440",
-                  border: currentAnswer?.success ? "2px solid var(--success-color-light)" : (currentAnswer?.deleted && showHiddenAnswers[selectedChat!] ? "1px solid #ccc" : "1px solid #dfc9ab"),
-                  lineHeight: 1.8,
-                  opacity: currentAnswer?.deleted && showHiddenAnswers[selectedChat!] ? 0.5 : 1,
-                  position: "relative",
-                  minHeight: 140,
-                  display: "flex",
-                  alignItems: "center",
-                  wordWrap: "break-word",
-                  overflowWrap: "break-word",
-                  whiteSpace: "pre-wrap",
-                }}>
-                  {currentAnswer?.deleted && showHiddenAnswers[selectedChat!] && (
-                    <div style={{
-                      position: "absolute",
-                      top: "50%",
-                      left: "50%",
-                      transform: "translate(-50%, -50%)",
-                      fontSize: "16px",
-                      fontWeight: "600",
-                      color: "#999",
-                      backgroundColor: "rgba(255, 255, 255, 0.9)",
-                      padding: "8px 16px",
-                      borderRadius: "8px",
-                    }}>
-                      非表示
-                    </div>
-                  )}
-                  <div style={{
-                    opacity: currentAnswer?.deleted && showHiddenAnswers[selectedChat!] ? 0.3 : 1,
-                    width: "100%",
-                  }}>
-                    {currentAnswer?.text}
-                  </div>
-                </div>
-
-                {/* 次の回答ボタン */}
-                <button
-                  onClick={showNextAnswer}
-                  disabled={!currentAnswerGroup || currentAnswerGroup.answers.length <= 1}
-                  style={{
-                    flex: "0 0 auto",
-                    padding: "12px 16px",
-                    fontSize: "1.2rem",
-                    fontWeight: "600",
-                    color: !currentAnswerGroup || currentAnswerGroup.answers.length <= 1 ? "#ccc" : "#fff",
-                    background: !currentAnswerGroup || currentAnswerGroup.answers.length <= 1 ? "#ddd" : "#665440",
-                    border: "none",
-                    borderRadius: "10px",
-                    cursor: !currentAnswerGroup || currentAnswerGroup.answers.length <= 1 ? "not-allowed" : "pointer",
-                    transition: "all 0.25s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (currentAnswerGroup && currentAnswerGroup.answers.length > 1) {
-                      e.currentTarget.style.background = "#9a6044";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (currentAnswerGroup && currentAnswerGroup.answers.length > 1) {
-                      e.currentTarget.style.background = "#665440";
-                    }
-                  }}
-                >
-                  ▶
-                </button>
-              </div>
-            ) : messages.filter(m => m.role === "ai").slice(-1).map(m => (
-              <div key={m.id} style={{
+              {/* AIの回答 */}
+              <div key="current-answer" style={{
+                flex: 1,
                 padding: 20,
-                background: "#fff",
+                background: currentAnswer?.success ? "var(--success-bg-light)" : "#fff",
                 borderRadius: 12,
-                fontSize: 16,
-                color: "#665440",
-                border: "1px solid #dfc9ab",
+                fontSize: 25,
+                color: currentAnswer?.deleted && showHiddenAnswers[selectedChat!] ? "#999" : "#665440",
+                border: currentAnswer?.success ? "2px solid var(--success-color-light)" : (currentAnswer?.deleted && showHiddenAnswers[selectedChat!] ? "1px solid #ccc" : "1px solid #dfc9ab"),
                 lineHeight: 1.8,
+                opacity: currentAnswer?.deleted && showHiddenAnswers[selectedChat!] ? 0.5 : 1,
+                position: "relative",
                 minHeight: 140,
                 display: "flex",
                 alignItems: "center",
+                wordWrap: "break-word",
+                overflowWrap: "break-word",
+                whiteSpace: "pre-wrap",
               }}>
-                {m.text}
+                {currentAnswer?.deleted && showHiddenAnswers[selectedChat!] && (
+                  <div style={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    fontSize: "16px",
+                    fontWeight: "600",
+                    color: "#999",
+                    backgroundColor: "rgba(255, 255, 255, 0.9)",
+                    padding: "8px 16px",
+                    borderRadius: "8px",
+                  }}>
+                    非表示
+                  </div>
+                )}
+                <div style={{
+                  opacity: currentAnswer?.deleted && showHiddenAnswers[selectedChat!] ? 0.3 : 1,
+                  width: "100%",
+                }}>
+                  {currentAnswer?.text || (messages.filter(m => m.role === "ai").slice(-1)[0]?.text || "AIの回答を待っています...")}
+                </div>
               </div>
-            ))}
+
+              {/* 次の回答ボタン */}
+              <button
+                onClick={showNextAnswer}
+                disabled={!currentAnswerGroup || currentAnswerGroup.answers.length <= 1}
+                style={{
+                  flex: "0 0 auto",
+                  padding: "12px 16px",
+                  fontSize: "1.2rem",
+                  fontWeight: "600",
+                  color: !currentAnswerGroup || currentAnswerGroup.answers.length <= 1 ? "#ccc" : "#fff",
+                  background: !currentAnswerGroup || currentAnswerGroup.answers.length <= 1 ? "#ddd" : "#665440",
+                  border: "none",
+                  borderRadius: "10px",
+                  cursor: !currentAnswerGroup || currentAnswerGroup.answers.length <= 1 ? "not-allowed" : "pointer",
+                  transition: "all 0.25s ease",
+                }}
+                onMouseEnter={(e) => {
+                  if (currentAnswerGroup && currentAnswerGroup.answers.length > 1) {
+                    e.currentTarget.style.background = "#9a6044";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (currentAnswerGroup && currentAnswerGroup.answers.length > 1) {
+                    e.currentTarget.style.background = "#665440";
+                  }
+                }}
+              >
+                ▶
+              </button>
+            </div>
           </div>
 
           <div style={{ display: "flex", gap: 12, margin: "16px 0", flexWrap: "wrap" }}>
@@ -828,7 +811,7 @@ export default function ChatPage() {
             <label style={{
               display: "block",
               marginBottom: 12,
-              fontSize: "1rem",
+              fontSize: "2rem",
               fontWeight: "600",
               color: "#665440",
             }}>
@@ -857,7 +840,7 @@ export default function ChatPage() {
                 minHeight: 140,
                 borderRadius: 10,
                 padding: 14,
-                fontSize: "0.95rem",
+                fontSize: 20,
                 border: "2px solid #c3af96",
                 fontFamily: "var(--font-noto-sans-jp)",
                 color: "#665440",
