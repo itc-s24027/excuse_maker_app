@@ -172,6 +172,22 @@ export async function getExcuseTags({ excuseId }: { excuseId: string }) {
 
 // タグに関連する言い訳を取得（いいね数でソート）
 export async function getExcusesByTag({ tagId }: { tagId: string }) {
+  // タグ情報を取得
+  const tag = await prisma.tag.findUnique({
+    where: { id: tagId },
+    select: {
+      id: true,
+      title: true,
+      isSystemTag: true,
+      userId: true,
+      isDeleted: true,
+    },
+  });
+
+  if (!tag) {
+    throw new Error("タグが見つかりません");
+  }
+
   const excuses = await prisma.excuse.findMany({
     where: {
       tags: {
@@ -219,5 +235,5 @@ export async function getExcusesByTag({ tagId }: { tagId: string }) {
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
-  return excusesWithLikeCounts;
+  return { tag, excuses: excusesWithLikeCounts };
 }

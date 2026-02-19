@@ -99,7 +99,9 @@ export default function SaveExcuseModal({
           boxShadow: "0 4px 16px rgba(0, 0, 0, 0.2)",
         }}
       >
-        <h2 style={{ marginTop: 0, marginBottom: 16 }}>言い訳を保存</h2>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "#665440" }}>言い訳を保存</h2>
+        </div>
 
         {/* 言い訳の内容表示 */}
         <div style={{ marginBottom: 20 }}>

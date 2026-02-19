@@ -19,7 +19,6 @@ type ChatSummary = { id: string; title: string };
 type Message = { id: string; role: "user" | "ai"; text: string };
 type Answer = { text: string; deleted: boolean; success: boolean; excuseId: string };
 type AnswerGroup = { promptId: string; prompt: string; answers: Answer[]; currentIndex: number };
-type Tag = { title: string; isSystemTag?: boolean };
 type Tag = {
   id?: string;
   title: string;
@@ -42,9 +41,7 @@ export default function ChatPage() {
   const [chatAnswerHistory, setChatAnswerHistory] = useState<Record<string, AnswerGroup[]>>({});
   // 現在表示中の回答グループのインデックス
   const [currentGroupIndex, setCurrentGroupIndex] = useState<Record<string, number>>({});
-  const [showCreate, setShowCreate] = useState(false); // 画面読み込み時は自動表示しない
-  const [tags] = useState<string[]>(["遅刻", "学校", "仕事"]);
-  const [showCreate, setShowCreate] = useState(true); // 画面読み込み時に自動表示
+  const [showCreate, setShowCreate] = useState(false); // 初期状態は非表示、チャット読み込み後に制御
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(false);
   const [showSuccessHistory, setShowSuccessHistory] = useState(false); // 成功の履歴表示制御
@@ -59,17 +56,24 @@ export default function ChatPage() {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [lastExcuseText, setLastExcuseText] = useState("");
 
+  // ポップアップ用の状態
+  const [popupMessage, setPopupMessage] = useState<string | null>(null);
+  const [showPopup, setShowPopup] = useState(false);
+
+  // ポップアップを表示する関数
+  const showAlert = (message: string) => {
+    setPopupMessage(message);
+    setShowPopup(true);
+  };
+
   // 導出値: 現在選択されているチャットの情報
   const messages = selectedChat ? (chatMessages[selectedChat] ?? []) : [];
   const prompt = selectedChat ? (chatPrompts[selectedChat] ?? "") : (chatPrompts["temp-chat"] ?? "");
   const answerHistory = selectedChat ? (chatAnswerHistory[selectedChat] ?? []) : [];
   const currentGroupIdx = selectedChat ? (currentGroupIndex[selectedChat] ?? -1) : -1;
-  const currentAnswerGroup = currentGroupIdx >= 0 ? answerHistory[currentGroupIdx] ?? null : null;
-  const validAnswers = currentAnswerGroup ? currentAnswerGroup.answers.filter((a: Answer) => !a.deleted) : [];
-  const currentAnswer = validAnswers.length > 0 ? validAnswers[0] : null;
   const currentAnswerGroup = currentGroupIdx >= 0 ? answerHistory[currentGroupIdx] : null;
   // 削除されていない回答のみを取得
-  const validAnswers = currentAnswerGroup ? currentAnswerGroup.answers.filter(a => !a.deleted) : [];
+  const validAnswers = currentAnswerGroup ? currentAnswerGroup.answers.filter((a: Answer) => !a.deleted) : [];
   // 現在表示されている回答を取得：currentAnswerGroup内のcurrentIndexで指定された回答を表示
   // ただし、currentIndexはallAnswersのインデックスなので、validAnswersとのマッピングが必要
   const currentAnswerIndex = currentAnswerGroup ? currentAnswerGroup.currentIndex : -1;
@@ -331,13 +335,13 @@ export default function ChatPage() {
   const handleSaveExcuse = async (selectedTags: Tag[]) => {
     try {
       if (!selectedChat || !currentAnswer) {
-        alert("チャットまたは言い訳が選択されていません");
+        showAlert("チャットまたは言い訳が選択されていません");
         return;
       }
 
       const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
       if (!API_URL) {
-        alert("API URLが未設定です");
+        showAlert("API URLが未設定です");
         return;
       }
 
@@ -370,10 +374,13 @@ export default function ChatPage() {
       console.log("言い訳を保存しました:", data);
 
       setShowSaveModal(false);
-      alert("言い訳を保存しました！");
+      showAlert("言い訳を保存しました！");
+
+      // 保存後にタグ一覧を再取得してランキングに反映させる
+      await fetchTags();
     } catch (err) {
       console.error("言い訳保存エラー:", err);
-      alert(err instanceof Error ? err.message : "言い訳の保存に失敗しました");
+      showAlert(err instanceof Error ? err.message : "言い訳の保存に失敗しました");
     }
   };
 
@@ -390,7 +397,7 @@ export default function ChatPage() {
       try {
         const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
         if (!API_URL) {
-          alert("サーバーURLが未設定です");
+          showAlert("サーバーURLが未設定です");
           setLoading(false);
           return;
         }
@@ -406,7 +413,7 @@ export default function ChatPage() {
         if (!res.ok) {
           const text = await res.text();
           console.error("チャット作成エラー", res.status, text);
-          alert("チャット作成に失敗しました");
+          showAlert("チャット作成に失敗しました");
           setLoading(false);
           return;
         }
@@ -433,7 +440,7 @@ export default function ChatPage() {
         chatId = newChat.id;
       } catch (err) {
         console.error("チャット作成エラー:", err);
-        alert("チャット作成に失敗しました");
+        showAlert("チャット作成に失敗しました");
         setLoading(false);
         return;
       }
@@ -663,27 +670,6 @@ export default function ChatPage() {
     } catch (error) {
       console.error("非表示フラグ保存エラー:", error);
     }
-    // SaveExcuseModalを表示
-    if (currentAnswer) {
-      setLastExcuseText(currentAnswer.text);
-      setShowSaveModal(true);
-    }
-
-    setChatAnswerHistory((prev) => {
-      const history = [...(prev[selectedChat] ?? [])];
-      const groupIndex = currentGroupIdx;
-      if (groupIndex >= 0 && groupIndex < history.length) {
-        const group = history[groupIndex];
-        const newAnswers = [...group.answers];
-        // 最初の削除されていない回答に成功フラグを立てる
-        const validIndex = newAnswers.findIndex(a => !a.deleted);
-        if (validIndex >= 0) {
-          newAnswers[validIndex] = { ...newAnswers[validIndex], success: true };
-        }
-        history[groupIndex] = { ...group, answers: newAnswers };
-      }
-      return { ...prev, [selectedChat]: history };
-    });
   };
 
   // 非表示を解除（論理削除を取り消す）
@@ -971,7 +957,7 @@ export default function ChatPage() {
       setShowCreate(false);
     } catch (err) {
       console.error("チャット作成エラー:", err);
-      alert("チャット作成に失敗しました: " + String(err));
+      showAlert("チャット作成に失敗しました: " + String(err));
     }
   };
 
@@ -990,7 +976,7 @@ export default function ChatPage() {
 
       if (!response.ok) {
         console.error("チャット削除エラー:", response.status);
-        alert("チャット削除に失敗しました");
+        showAlert("チャット削除に失敗しました");
         return;
       }
 
@@ -1039,7 +1025,7 @@ export default function ChatPage() {
       setOpenMenuChatId(null);
     } catch (error) {
       console.error("チャット削除エラー:", error);
-      alert("チャット削除に失敗しました");
+      showAlert("チャット削除に失敗しました");
     }
   };
 
@@ -1061,7 +1047,7 @@ export default function ChatPage() {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
       if (!API_URL) {
-        alert("API URLが未設定です");
+        showAlert("API URLが未設定です");
         return;
       }
 
@@ -1074,13 +1060,13 @@ export default function ChatPage() {
         throw new Error(`削除に失敗しました: ${errorText}`);
       }
 
-      alert("タグを削除しました！");
+      showAlert("タグを削除しました！");
       setOpenMenuTagId(null);
       // タグ一覧を再取得
       await fetchTags();
     } catch (err) {
       console.error("タグ削除エラー:", err);
-      alert(err instanceof Error ? err.message : "タグの削除に失敗しました");
+      showAlert(err instanceof Error ? err.message : "タグの削除に失敗しました");
     }
   };
 
@@ -1091,7 +1077,7 @@ export default function ChatPage() {
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
       if (!API_URL) {
-        alert("API URLが未設定です");
+        showAlert("API URLが未設定です");
         return;
       }
 
@@ -1108,7 +1094,7 @@ export default function ChatPage() {
         throw new Error(`更新に失敗しました: ${errorText}`);
       }
 
-      alert("タグを更新しました！");
+      showAlert("タグを更新しました！");
       setEditingTagId(null);
       setEditingTagTitle("");
       setOpenMenuTagId(null);
@@ -1116,7 +1102,7 @@ export default function ChatPage() {
       await fetchTags();
     } catch (err) {
       console.error("タグ更新エラー:", err);
-      alert(err instanceof Error ? err.message : "タグの更新に失敗しました");
+      showAlert(err instanceof Error ? err.message : "タグの更新に失敗しました");
     }
   };
 
@@ -1274,34 +1260,24 @@ export default function ChatPage() {
         border: "2px solid #c3af96",
         overflowY: "auto",
       }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" , paddingTop: 20}}>
           <div style={{ marginBottom: 16 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: "12px" }}>
+              <img
+                src="/猫アイコン1.png"
+                alt="猫アイコン"
+                style={{ width: 40, height: 40, paddingTop: 3 }}
+              />
               <h2 style={{
-                fontSize: "2rem",
-                fontWeight: "700",
+                  fontSize: "1.3rem",
+                fontWeight: "500",
                 color: "#665440",
                 margin: 0,
               }}>
-                AIの回答
+                猫様からのアドバイス
               </h2>
-              {currentAnswerGroup && validAnswers.length > 0 && (
-                <span style={{ fontSize: 14, color: "#9a6044", fontWeight: "600" }}>
-                  {currentAnswer ? (() => {
-                    // 現在表示されている回答が、削除されていない回答の何番目かを計算
-                    const currentAnswerIndex = currentAnswerGroup.answers.findIndex(a => a === currentAnswer);
-                    if (currentAnswerIndex >= 0) {
-                      // currentAnswerIndexまでのすべての回答のうち、削除されていないものの数
-                      const position = currentAnswerGroup.answers
-                        .slice(0, currentAnswerIndex + 1)
-                        .filter(a => !a.deleted).length;
-                      return `${position}/${validAnswers.length}`;
-                    }
-                    return `1/${validAnswers.length}`;
-                  })() : `1/${validAnswers.length}`}
-                </span>
-              )}
             </div>
+
             <div style={{
               display: "flex",
               gap: 12,
@@ -1352,7 +1328,8 @@ export default function ChatPage() {
                 position: "relative",
                 minHeight: 140,
                 display: "flex",
-                alignItems: "center",
+                alignItems: "flex-start",
+                gap: 12,
                 wordWrap: "break-word",
                 overflowWrap: "break-word",
                 whiteSpace: "pre-wrap",
@@ -1375,7 +1352,7 @@ export default function ChatPage() {
                 )}
                 <div style={{
                   opacity: currentAnswer?.deleted && showHiddenAnswers[selectedChat!] ? 0.3 : 1,
-                  width: "100%",
+                  flex: 1,
                 }}>
                   {currentAnswer?.text || (messages.filter(m => m.role === "ai").slice(-1)[0]?.text || "AIの回答を待っています...")}
                 </div>
@@ -1412,51 +1389,75 @@ export default function ChatPage() {
               </button>
             </div>
           </div>
+            {/*回答のページ数表示*/}
+            {currentAnswerGroup && validAnswers.length > 0 && (
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: "12px" }}>
+                <span style={{ fontSize: 18, color: "#9a6044", fontWeight: "600"}}>
+                  {currentAnswer ? (() => {
+                      // 現在表示されている回答が、削除されていない回答の何番目かを計算
+                      const currentAnswerIndex = currentAnswerGroup.answers.findIndex(a => a === currentAnswer);
+                      if (currentAnswerIndex >= 0) {
+                          // currentAnswerIndexまでのすべての回答のうち、削除されていないものの数
+                          const position = currentAnswerGroup.answers
+                              .slice(0, currentAnswerIndex + 1)
+                              .filter(a => !a.deleted).length;
+                          return `${position}/${validAnswers.length}`;
+                      }
+                      return `1/${validAnswers.length}`;
+                  })() : `1/${validAnswers.length}`}
+                </span>
+                </div>
+            )}
 
-          <div style={{ display: "flex", gap: 12, margin: "16px 0", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 12, margin: "16px 0", flexWrap: "wrap", justifyContent: "center" }}>
             <button
               onClick={markSuccess}
+              disabled={currentAnswer?.success}
               style={{
                 padding: "10px 20px",
                 fontSize: "0.95rem",
                 fontWeight: "600",
-                color: "#fff",
-                background: "var(--success-color-light)",
+                color: currentAnswer?.success ? "#ccc" : "#fff",
+                background: currentAnswer?.success ? "#ddd" : "var(--success-color-light)",
                 border: "none",
                 borderRadius: "10px",
-                cursor: "pointer",
+                cursor: currentAnswer?.success ? "not-allowed" : "pointer",
                 transition: "all 0.25s ease",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--success-hover)";
+                if (!currentAnswer?.success) {
+                  e.currentTarget.style.background = "var(--success-hover)";
+                }
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = "var(--success-color-light)";
+                if (!currentAnswer?.success) {
+                  e.currentTarget.style.background = "var(--success-color-light)";
+                }
               }}
             >
               成功
             </button>
             <button
               onClick={hideAnswer}
-              disabled={!currentAnswer || currentAnswer.deleted}
+              disabled={!currentAnswer || currentAnswer.deleted || currentAnswer.success}
               style={{
                 padding: "10px 20px",
                 fontSize: "0.95rem",
                 fontWeight: "600",
                 color: "#fff",
-                background: !currentAnswer || currentAnswer.deleted ? "#ccc" : "#c87960",
+                background: !currentAnswer || currentAnswer.deleted || currentAnswer.success ? "#ccc" : "#c87960",
                 border: "none",
                 borderRadius: "10px",
-                cursor: !currentAnswer || currentAnswer.deleted ? "not-allowed" : "pointer",
+                cursor: !currentAnswer || currentAnswer.deleted || currentAnswer.success ? "not-allowed" : "pointer",
                 transition: "all 0.25s ease",
               }}
               onMouseEnter={(e) => {
-                if (currentAnswer && !currentAnswer.deleted) {
+                if (currentAnswer && !currentAnswer.deleted && !currentAnswer.success) {
                   e.currentTarget.style.background = "#a85d48";
                 }
               }}
               onMouseLeave={(e) => {
-                if (currentAnswer && !currentAnswer.deleted) {
+                if (currentAnswer && !currentAnswer.deleted && !currentAnswer.success) {
                   e.currentTarget.style.background = "#c87960";
                 }
               }}
@@ -1521,11 +1522,17 @@ export default function ChatPage() {
             <label style={{
               display: "block",
               marginBottom: 12,
-              fontSize: "2rem",
-              fontWeight: "600",
+                paddingTop: 20,
+              fontSize: "1.3rem",
+              fontWeight: "500",
               color: "#665440",
             }}>
-              プロンプト
+                <img
+                    src="/状況.png"
+                    alt="状況アイコン"
+                    style={{ width: 32, height: 32, verticalAlign: "middle", marginRight: 8 }}
+                />
+              今の状況をAIに相談してみましょう
             </label>
             <textarea
               value={prompt}
@@ -1599,7 +1606,7 @@ export default function ChatPage() {
             </div>
 
             {/* 成功の履歴ボタン */}
-            <div style={{ marginTop: 16, display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <div style={{ marginTop: 16, display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
               <button
                 onClick={() => setShowSuccessHistory(!showSuccessHistory)}
                 style={{
@@ -1662,12 +1669,13 @@ export default function ChatPage() {
 
             {/* 成功の履歴一覧（横並び表示） */}
             {showSuccessHistory && answerHistory.length > 0 && answerHistory.some(g => g.answers.some(a => a.success && !a.deleted)) && (
-              <div style={{ marginTop: 32 }}>
+              <div style={{ marginTop: 32, display: "flex", justifyContent: "center" }}>
                 <div style={{
                   display: "flex",
                   gap: 12,
                   overflowX: "auto",
                   paddingBottom: 12,
+                  maxWidth: "100%",
                 }}>
                   {answerHistory.map((group, idx) => {
                     const successAnswers = group.answers.filter(a => a.success && !a.deleted);
@@ -1748,9 +1756,49 @@ export default function ChatPage() {
                           fontSize: 16,
                           lineHeight: 1.6,
                           color: idx === currentGroupIdx ? "rgba(255,255,255,0.95)" : "var(--success-color-light)",
+                          paddingRight: 40,
                         }}>
                           <strong></strong> {successAnswer.text.substring(0, 80)}
                         </div>
+
+                        {/* ノートアイコンボタン（右下） */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setLastExcuseText(successAnswer.text);
+                            setShowSaveModal(true);
+                          }}
+                          style={{
+                            position: "absolute",
+                            bottom: 12,
+                            right: 12,
+                            width: 32,
+                            height: 32,
+                            padding: 0,
+                            background: "transparent",
+                            border: "none",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            transition: "all 0.2s ease",
+                            opacity: 0.7,
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.opacity = "1";
+                            e.currentTarget.style.transform = "scale(1.1)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.opacity = "0.7";
+                            e.currentTarget.style.transform = "scale(1)";
+                          }}
+                        >
+                          <img
+                            src="/ノートアイコン.png"
+                            alt="保存"
+                            style={{ width: 38, height: 38 }}
+                          />
+                        </button>
                       </div>
                     )) : null;
                   })}
@@ -1760,12 +1808,13 @@ export default function ChatPage() {
 
             {/* 非表示の履歴一覧（横並び表示） */}
             {showHiddenAnswers[selectedChat!] && answerHistory.length > 0 && (
-              <div style={{ marginTop: 32 }}>
+              <div style={{ marginTop: 32, display: "flex", justifyContent: "center" }}>
                 <div style={{
                   display: "flex",
                   gap: 12,
                   overflowX: "auto",
                   paddingBottom: 12,
+                  maxWidth: "100%",
                 }}>
                   {answerHistory.map((group, idx) => {
                     const hiddenAnswers = group.answers.filter(a => a.deleted);
@@ -2095,7 +2144,7 @@ export default function ChatPage() {
                 color: "#665440",
                 marginBottom: "8px",
               }}>
-                システムタグ
+                定番タグ
               </h4>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {systemTags.map((t) => (
@@ -2181,6 +2230,7 @@ export default function ChatPage() {
           onClose={() => setShowCreate(false)}
           onCreate={createChat}
           isFirstChat={chats.length === 0}
+          onAlert={showAlert}
         />
       )}
 
@@ -2273,17 +2323,85 @@ export default function ChatPage() {
           </div>
         </div>
       )}
+
+      {/* ポップアップ通知 */}
+      {showPopup && (
+        <div style={{
+          position: "fixed",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          background: "#fff",
+          padding: "24px",
+          borderRadius: "12px",
+          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.3)",
+          zIndex: 2001,
+          maxWidth: "400px",
+          minWidth: "300px",
+          border: "2px solid #c3af96",
+        }}>
+          <p style={{
+            margin: "0 0 20px 0",
+            fontSize: "16px",
+            color: "#665440",
+            fontWeight: "500",
+            lineHeight: 1.5,
+          }}>
+            {popupMessage}
+          </p>
+          <div style={{
+            display: "flex",
+            justifyContent: "flex-end",
+          }}>
+            <button
+              onClick={() => setShowPopup(false)}
+              style={{
+                padding: "10px 20px",
+                background: "#665440",
+                color: "#fff",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: "600",
+                transition: "all 0.25s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#9a6044";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#665440";
+              }}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ポップアップ背景オーバーレイ */}
+      {showPopup && (
+        <div
+          onClick={() => setShowPopup(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.3)",
+            zIndex: 2000,
+          }}
+        />
+      )}
     </div>
   );
 }
 
 /* Create モーダル（簡易） */
-function CreateModal({ onClose, onCreate, isFirstChat }: { onClose: () => void; onCreate: (title: string) => void; isFirstChat: boolean }) {
+function CreateModal({ onClose, onCreate, isFirstChat, onAlert }: { onClose: () => void; onCreate: (title: string) => void; isFirstChat: boolean; onAlert: (message: string) => void }) {
   const [title, setTitle] = useState("");
 
   const submit = () => {
     if (!title.trim()) {
-      alert("タイトルを入力してください");
+      onAlert("タイトルを入力してください");
       return;
     }
     onCreate(title);
