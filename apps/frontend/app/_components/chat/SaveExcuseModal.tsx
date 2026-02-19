@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import TagSelector from "./TagSelector";
-import TagCreator from "./TagCreator";
 import SelectedTagsDisplay from "./SelectedTagsDisplay";
 
 interface Tag {
@@ -39,21 +38,6 @@ export default function SaveExcuseModal({
     }
   }, [isOpen, availableTags]);
 
-  // タグが新規作成された時の処理
-  const handleTagCreated = (newTag: { id: string; title: string }) => {
-    const newTagObj: Tag = {
-      id: newTag.id,
-      title: newTag.title,
-      isSystemTag: false
-    };
-    setAllTags((prev) => [...prev, newTagObj]);
-    setSelectedTags((prev) => [...prev, newTagObj]);
-
-    // 親コンポーネントのタグ一覧を更新
-    if (onTagsUpdated) {
-      onTagsUpdated();
-    }
-  };
 
   // タグ選択/解除
   const toggleTag = (tagTitle: string) => {
@@ -125,21 +109,13 @@ export default function SaveExcuseModal({
         {/* タグ選択セクション */}
         <div style={{ marginBottom: 20 }}>
           <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, color: "#666" }}>
-            タグを選択
+            タグ一覧
           </h3>
           <TagSelector
             availableTags={allTags}
             selectedTags={selectedTags.map(t => t.title)}
             onToggleTag={toggleTag}
           />
-        </div>
-
-        {/* 新規タグ作成セクション */}
-        <div style={{ marginBottom: 20 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, color: "#666" }}>
-            新しいタグを作成
-          </h3>
-          <TagCreator onTagCreated={handleTagCreated} />
         </div>
 
         {/* 選択済みタグ表示 */}

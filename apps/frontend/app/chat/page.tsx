@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import LogoutButton from "@/app/_components/GoogleButton/logout";
 import SaveExcuseModal from "@/app/_components/chat/SaveExcuseModal";
 import { apifetch } from "../lib/apiClient";
-import { useCurrentUser } from "../lib/useCurrentUser";
+import styles from "./page.module.css";
 
 /*
   シンプルなチャット画面サンプル。
@@ -30,7 +30,6 @@ type Tag = {
 
 export default function ChatPage() {
   const router = useRouter();
-  const { currentUser } = useCurrentUser();
   const [chats, setChats] = useState<ChatSummary[]>([]);
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
   // チャットID をキーにしてメッセージを管理
@@ -48,9 +47,6 @@ export default function ChatPage() {
   const [showHiddenAnswers, setShowHiddenAnswers] = useState<Record<string, boolean>>({}); // 非表示の回答表示制御
   const [deleteConfirmChatId, setDeleteConfirmChatId] = useState<string | null>(null); // 削除確認ダイアログで削除対象のチャットID
   const [openMenuChatId, setOpenMenuChatId] = useState<string | null>(null); // 三点リーダーメニューが開いているチャットID
-  const [openMenuTagId, setOpenMenuTagId] = useState<string | null>(null); // タグメニューの開閉状態
-  const [editingTagId, setEditingTagId] = useState<string | null>(null); // 編集中のタグID
-  const [editingTagTitle, setEditingTagTitle] = useState(""); // 編集中のタグ名
 
   // SaveExcuseModal 用の状態
   const [showSaveModal, setShowSaveModal] = useState(false);
@@ -128,14 +124,25 @@ export default function ChatPage() {
 
         // 新スキーマ（ExcusePrompt/ExcuseAnswer）をチェック
         if (chatDetail.excusePrompts && Array.isArray(chatDetail.excusePrompts) && chatDetail.excusePrompts.length > 0) {
-          answerGroups = chatDetail.excusePrompts.map((prompt: any, idx: number) => ({
+          interface ExcusePromptResponse {
+            id: string;
+            situation: string;
+            answers?: Array<{
+              excuseText: string;
+              isDeleted?: boolean;
+              success?: boolean;
+            }>;
+          }
+
+          answerGroups = (chatDetail.excusePrompts as ExcusePromptResponse[]).map((prompt, idx: number) => ({
             promptId: prompt.id || String(idx),
             prompt: prompt.situation || "", // プロンプト
             answers: prompt.answers && Array.isArray(prompt.answers)
-              ? prompt.answers.map((answer: any) => ({
+              ? prompt.answers.map((answer) => ({
                   text: answer.excuseText, // AIの回答
                   deleted: answer.isDeleted || false, // 非表示フラグ
                   success: answer.success || false, // 成功フラグ
+                  excuseId: "", // excuseIdは古いスキーマでのみ使用
                 }))
               : [],
             currentIndex: 0,
@@ -149,13 +156,21 @@ export default function ChatPage() {
           if (chatDetail.excuses.length > 0) {
             console.log("最初のExcuseレコードの詳細:", {
               ...chatDetail.excuses[0],
-              isDeleted: (chatDetail.excuses[0] as any).isDeleted,
-              success: (chatDetail.excuses[0] as any).success,
+              isDeleted: (chatDetail.excuses[0] as ExcuseResponse).isDeleted,
+              success: (chatDetail.excuses[0] as ExcuseResponse).success,
             });
           }
 
           // situationごとにExcuseをグループ化
-          const groupedBySituation = chatDetail.excuses.reduce((acc: any, excuse: any) => {
+          interface ExcuseResponse {
+            id: string;
+            excuseText: string;
+            situation?: string;
+            isDeleted?: boolean;
+            success?: boolean;
+          }
+
+          const groupedBySituation = (chatDetail.excuses as ExcuseResponse[]).reduce((acc: Record<string, ExcuseResponse[]>, excuse) => {
             const situation = excuse.situation || "";
             if (!acc[situation]) {
               acc[situation] = [];
@@ -167,12 +182,13 @@ export default function ChatPage() {
           console.log("グループ化後:", groupedBySituation);
 
           // グループをAnswerGroupに変換
-          answerGroups = Object.entries(groupedBySituation).map(([situation, excuses]: [string, any], idx: number) => ({
+          const groupedExcuses = groupedBySituation as Record<string, ExcuseResponse[]>;
+          answerGroups = Object.entries(groupedExcuses).map(([situation, excuses], idx: number) => ({
             promptId: String(idx),
             prompt: situation,
-            answers: excuses.map((excuse: any) => {
-              const isDeleted = (excuse as any).isDeleted || false;
-              const success = (excuse as any).success || false;
+            answers: excuses.map((excuse) => {
+              const isDeleted = excuse.isDeleted || false;
+              const success = excuse.success || false;
               console.log(`Excuse ${excuse.id}: isDeleted=${isDeleted}, success=${success}`);
               return {
                 text: excuse.excuseText, // AIの回答
@@ -264,7 +280,11 @@ export default function ChatPage() {
 
         // データはChat[] の配列
         if (Array.isArray(data)) {
-          const chatsFromDB = data.map((chat: any) => ({
+          interface ChatResponse {
+            id: string;
+            title: string;
+          }
+          const chatsFromDB = (data as ChatResponse[]).map((chat) => ({
             id: chat.id,
             title: chat.title,
           }));
@@ -312,7 +332,15 @@ export default function ChatPage() {
       }
 
       const data = await res.json();
-      const fetchedTags: Tag[] = (data.tags || []).map((tag: any) => ({
+      interface TagResponse {
+        id: string;
+        title: string;
+        isSystemTag?: boolean;
+        userId?: string | null;
+        user?: { id: string; nickname: string | null; email: string } | null;
+        isDeleted?: boolean;
+      }
+      const fetchedTags: Tag[] = ((data.tags || []) as TagResponse[]).map((tag) => ({
         id: tag.id,
         title: tag.title,
         isSystemTag: tag.isSystemTag ?? false,
@@ -1036,88 +1064,10 @@ export default function ChatPage() {
     }
   };
 
-  // タグを削除
-  const handleDeleteTag = async (tagId?: string) => {
-    if (!tagId) return;
-
-    if (!confirm("このタグを削除してもよろしいですか？")) {
-      return;
-    }
-
-    try {
-      const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-      if (!API_URL) {
-        showAlert("API URLが未設定です");
-        return;
-      }
-
-      const res = await apifetch(`${API_URL}/tags/${tagId}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`削除に失敗しました: ${errorText}`);
-      }
-
-      showAlert("タグを削除しました！");
-      setOpenMenuTagId(null);
-      // タグ一覧を再取得
-      await fetchTags();
-    } catch (err) {
-      console.error("タグ削除エラー:", err);
-      showAlert(err instanceof Error ? err.message : "タグの削除に失敗しました");
-    }
-  };
-
-  // タグ名を更新
-  const handleUpdateTag = async (tagId?: string) => {
-    if (!tagId || !editingTagTitle.trim()) return;
-
-    try {
-      const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-      if (!API_URL) {
-        showAlert("API URLが未設定です");
-        return;
-      }
-
-      const res = await apifetch(`${API_URL}/tags/${tagId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ title: editingTagTitle.trim() }),
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`更新に失敗しました: ${errorText}`);
-      }
-
-      showAlert("タグを更新しました！");
-      setEditingTagId(null);
-      setEditingTagTitle("");
-      setOpenMenuTagId(null);
-      // タグ一覧を再取得
-      await fetchTags();
-    } catch (err) {
-      console.error("タグ更新エラー:", err);
-      showAlert(err instanceof Error ? err.message : "タグの更新に失敗しました");
-    }
-  };
-
   return (
-    <div style={{ display: "flex", height: "100vh", gap: 12, padding: 12 }}>
+    <div className={styles.mainContainer}>
       {/* 左サイドバー */}
-      <aside style={{
-        width: 280,
-        background: "#fff6e9",
-        padding: 16,
-        borderRadius: 12,
-        border: "2px solid #c3af96",
-        display: "flex",
-        flexDirection: "column",
-      }}>
+      <aside className={styles.sidebar}>
         <button
           onClick={() => setShowCreate(true)}
           style={{
@@ -1920,223 +1870,9 @@ export default function ChatPage() {
         overflowY: "auto",
         gap: 16,
       }}>
-        {/* あなたのタグ */}
-        <div>
-          <h4 style={{
-            fontSize: "0.9rem",
-            fontWeight: "700",
-            color: "#665440",
-            marginBottom: "8px",
-          }}>
-            あなたのタグ
-          </h4>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {(() => {
-              const myTags = tags.filter((t) => !t.isSystemTag && currentUser && t.userId === currentUser.id);
-              return myTags.length > 0 ? (
-                myTags.map((t) => (
-                  <div key={t.id || t.title}>
-                    {editingTagId === t.id ? (
-                      // 編集モード
-                      <div style={{
-                        background: "#fff",
-                        padding: 10,
-                        borderRadius: 8,
-                        border: "1px solid #dfc9ab",
-                        display: "flex",
-                        gap: 8,
-                        alignItems: "center",
-                      }}>
-                        <input
-                          type="text"
-                          value={editingTagTitle}
-                          onChange={(e) => setEditingTagTitle(e.target.value)}
-                          style={{
-                            flex: 1,
-                            padding: 6,
-                            border: "1px solid #dfc9ab",
-                            borderRadius: 4,
-                            fontSize: "0.9rem",
-                          }}
-                          autoFocus
-                        />
-                        <button
-                          onClick={() => handleUpdateTag(t.id)}
-                          style={{
-                            background: "#4CAF50",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: 4,
-                            padding: "6px 10px",
-                            cursor: "pointer",
-                            fontSize: "12px",
-                            fontWeight: "600",
-                          }}
-                        >
-                          保存
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditingTagId(null);
-                            setEditingTagTitle("");
-                          }}
-                          style={{
-                            background: "#999",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: 4,
-                            padding: "6px 10px",
-                            cursor: "pointer",
-                            fontSize: "12px",
-                            fontWeight: "600",
-                          }}
-                        >
-                          キャンセル
-                        </button>
-                      </div>
-                    ) : (
-                      // 通常表示モード
-                      <div style={{
-                        background: "#fff",
-                        padding: 10,
-                        borderRadius: 8,
-                        border: "1px solid #dfc9ab",
-                        color: "#665440",
-                        fontWeight: "500",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: 8,
-                        position: "relative",
-                      }}>
-                        <span
-                          style={{
-                            flex: 1,
-                            cursor: "pointer",
-                            transition: "all 0.25s ease",
-                          }}
-                          onClick={() => handleTagClick(t.id)}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.color = "#c3af96";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.color = "#665440";
-                          }}
-                        >
-                          {t.title}
-                        </span>
-                        {/* メニューボタン */}
-                        <button
-                          onClick={() => setOpenMenuTagId(openMenuTagId === t.id ? null : (t.id || null))}
-                          style={{
-                            background: "transparent",
-                            color: "#665440",
-                            border: "none",
-                            cursor: "pointer",
-                            fontSize: "18px",
-                            fontWeight: "bold",
-                            padding: "4px 8px",
-                            transition: "all 0.2s ease",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.color = "#c3af96";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.color = "#665440";
-                          }}
-                        >
-                          ⋯
-                        </button>
-
-                        {/* ドロップダウンメニュー */}
-                        {openMenuTagId === t.id && (
-                          <div style={{
-                            position: "absolute",
-                            top: "100%",
-                            right: 0,
-                            background: "#fff",
-                            border: "1px solid #dfc9ab",
-                            borderRadius: 6,
-                            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-                            zIndex: 100,
-                            marginTop: 4,
-                          }}>
-                            <button
-                              onClick={() => {
-                                setEditingTagId(t.id || null);
-                                setEditingTagTitle(t.title);
-                              }}
-                              style={{
-                                display: "block",
-                                width: "100%",
-                                padding: "10px 16px",
-                                background: "transparent",
-                                border: "none",
-                                color: "#665440",
-                                cursor: "pointer",
-                                fontSize: "14px",
-                                fontWeight: "500",
-                                textAlign: "left",
-                                transition: "all 0.2s ease",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.background = "#f5f0e8";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.background = "transparent";
-                              }}
-                            >
-                              名前の変更
-                            </button>
-                            <button
-                              onClick={() => handleDeleteTag(t.id)}
-                              style={{
-                                display: "block",
-                                width: "100%",
-                                padding: "10px 16px",
-                                background: "transparent",
-                                border: "none",
-                                color: "#ff6b6b",
-                                cursor: "pointer",
-                                fontSize: "14px",
-                                fontWeight: "500",
-                                textAlign: "left",
-                                transition: "all 0.2s ease",
-                                borderTop: "1px solid #f0e8e0",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.background = "#ffe0e0";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.background = "transparent";
-                              }}
-                            >
-                              削除
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <p style={{
-                  fontSize: "0.85rem",
-                  color: "#9a6044",
-                  margin: 0,
-                  fontStyle: "italic",
-                }}>
-                  タグがありません
-                </p>
-              );
-            })()}
-          </div>
-        </div>
-
-        {/* システムタグ */}
+        {/* タグ一覧 */}
         {(() => {
-          const systemTags = tags.filter((t) => t.isSystemTag);
-          return systemTags.length > 0 ? (
+          return tags.length > 0 ? (
             <div>
               <h4 style={{
                 fontSize: "0.9rem",
@@ -2144,55 +1880,10 @@ export default function ChatPage() {
                 color: "#665440",
                 marginBottom: "8px",
               }}>
-                定番タグ
+                タグ一覧
               </h4>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {systemTags.map((t) => (
-                  <div
-                    key={t.id || t.title}
-                    style={{
-                      background: "#fff",
-                      padding: 10,
-                      borderRadius: 8,
-                      border: "1px solid #dfc9ab",
-                      color: "#665440",
-                      fontWeight: "500",
-                      cursor: "pointer",
-                      transition: "all 0.25s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "#c3af96";
-                      e.currentTarget.style.color = "#fff";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "#fff";
-                      e.currentTarget.style.color = "#665440";
-                    }}
-                    onClick={() => handleTagClick(t.id)}
-                  >
-                    {t.title}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null;
-        })()}
-
-        {/* ユーザータグ */}
-        {(() => {
-          const userTags = tags.filter((t) => !t.isSystemTag && t.userId !== null && t.userId !== undefined && (!currentUser || t.userId !== currentUser.id));
-          return userTags.length > 0 ? (
-            <div>
-              <h4 style={{
-                fontSize: "0.9rem",
-                fontWeight: "700",
-                color: "#665440",
-                marginBottom: "8px",
-              }}>
-                他のユーザーのタグ
-              </h4>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {userTags.map((t) => (
+                {tags.map((t) => (
                   <div
                     key={t.id || t.title}
                     style={{

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { apifetch } from "@/app/lib/apiClient";
 import { useCurrentUser } from "@/app/lib/useCurrentUser";
+import styles from "./page.module.css";
 
 interface Excuse {
   id: string;
@@ -34,6 +35,7 @@ export default function TagRankingPage({ params }: { params: Promise<{ tagId: st
   const [error, setError] = useState<string | null>(null);
   const { currentUser } = useCurrentUser();
   const [likedExcuses, setLikedExcuses] = useState<Set<string>>(new Set());
+  const [allTags, setAllTags] = useState<Tag[]>([]);
 
   // paramsをアンラップ（コンポーネント直下で呼び出し）
   const resolvedParams = React.use(params);
@@ -84,7 +86,24 @@ export default function TagRankingPage({ params }: { params: Promise<{ tagId: st
       }
     };
 
+    // すべてのタグを取得
+    const fetchAllTags = async () => {
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+        if (!API_URL) return;
+
+        const res = await apifetch(`${API_URL}/tags`);
+        if (res.ok) {
+          const data = await res.json();
+          setAllTags(data.tags || []);
+        }
+      } catch (err) {
+        console.error("タグ一覧取得エラー:", err);
+      }
+    };
+
     fetchData();
+    fetchAllTags();
   }, [resolvedParams, currentUser]);
 
   const handleLike = async (excuseId: string) => {
@@ -138,7 +157,7 @@ export default function TagRankingPage({ params }: { params: Promise<{ tagId: st
 
   if (loading) {
     return (
-      <div style={{ padding: 20, textAlign: "center" }}>
+      <div className={styles.loading}>
         <p>読み込み中...</p>
       </div>
     );
@@ -146,213 +165,193 @@ export default function TagRankingPage({ params }: { params: Promise<{ tagId: st
 
   if (error) {
     return (
-      <div style={{ padding: 20 }}>
-        <p style={{ color: "red" }}>エラー: {error}</p>
-        <Link href="/chat">チャットに戻る</Link>
+      <div className={styles.error}>
+        <p className={styles.errorText}>エラー: {error}</p>
+        <Link href="/chat" className={styles.errorLink}>チャットに戻る</Link>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: 20, maxWidth: 900, margin: "0 auto" }}>
-      {/* ヘッダー */}
-      <div style={{ marginBottom: 30 }}>
-        <Link href="/chat" style={{ marginRight: 10, color: "#665440", textDecoration: "none" }}>
-          <img
-            src="/矢印1.png"
-            alt="矢印アイコン"
-            style={{ width: 20, height: 20, marginBottom: -4, marginRight: 6 }}
-          />
-          チャットに戻る
-        </Link>
-        {tag && (
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 10 }}>
-            <img
-              src="/タグアイコン9.png"
-              alt="タグアイコン"
-              style={{ width: 28, height: 28, paddingTop: 2 }}
-            />
-            <h1 style={{ margin: 0, color: "#625649" }}>
-              {tag.title}
-            </h1>
+    <div style={{ display: "flex", gap: 20, padding: 20, minHeight: "100vh", background: "var(--primary-bg)" }}>
+      {/* メインコンテンツ */}
+      <main style={{ flex: 1 }}>
+        <div className={styles.container} style={{ maxWidth: "100%", margin: 0, padding: 0 }}>
+          {/* ヘッダー */}
+          <div className={styles.header}>
+            <Link href="/chat" className={styles.backLink}>
+              <img
+                src="/矢印1.png"
+                alt="矢印アイコン"
+                className={styles.backIcon}
+              />
+              チャットに戻る
+            </Link>
+            {tag && (
+              <div className={styles.tagHeader}>
+                <img
+                  src="/タグアイコン9.png"
+                  alt="タグアイコン"
+                  className={styles.tagIcon}
+                />
+                <h1 className={styles.tagTitle}>
+                  {tag.title}
+                </h1>
+              </div>
+            )}
+            <p className={styles.excuseCount}>
+              {excuses.length}件の言い訳が見つかりました
+            </p>
           </div>
-        )}
-        <p style={{ color: "#666", fontSize: 14 }}>
-          {excuses.length}件の言い訳が見つかりました
-        </p>
-      </div>
 
-      {/* 言い訳一覧 */}
-      {excuses.length > 0 ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
-          {excuses.map((excuse, idx) => {
-            const isLiked = likedExcuses.has(excuse.id);
-            return (
-              <div
-                key={excuse.id}
+          {/* 言い訳一覧 */}
+          {excuses.length > 0 ? (
+            <div className={styles.excuseList}>
+              {excuses.map((excuse, idx) => {
+                const isLiked = likedExcuses.has(excuse.id);
+                return (
+                  <div
+                    key={excuse.id}
+                    className={styles.excuseItem}
+                  >
+                    {/* ランキング番号（左側） */}
+                    <div className={styles.rankingNumber}>
+                      {idx + 1}
+                    </div>
+
+                    {/* 言い訳カード */}
+                    <div className={styles.excuseCard}>
+                      {/* 言い訳テキスト */}
+                      <div className={styles.excuseTextContainer}>
+                        <img
+                          src="/猫アイコン1.png"
+                          alt="AIの言い訳"
+                          className={styles.catIcon}
+                        />
+                        <p className={styles.excuseText}>
+                          {excuse.excuseText}
+                        </p>
+                      </div>
+
+                      {/* メタ情報 */}
+                      <div className={styles.metaInfo}>
+                        <img
+                          src="/状況.png"
+                          alt="状況アイコン"
+                          className={styles.situationIcon}
+                        />
+                        <div>
+                          状況: <span className={styles.situationText}>{excuse.situation || "未入力"}</span>
+                        </div>
+                      </div>
+
+                      {/* チャット情報といいねボタン */}
+                      <div className={styles.cardFooter}>
+                        <div>
+                          <div className={styles.chatInfo}>
+                            チャットタイトル: <span className={styles.chatTitle}>{excuse.chat.title}</span>
+                          </div>
+                          <div className={styles.createdDate}>
+                            {new Date(excuse.createdAt).toLocaleDateString("ja-JP")}
+                          </div>
+                        </div>
+
+                        {/* いいねボタン（猫の手アイコン） */}
+                        <div className={styles.likeContainer}>
+                          <button
+                            onClick={() => handleLike(excuse.id)}
+                            className={`${styles.likeButton} ${isLiked ? styles.liked : ""}`}
+                          >
+                            <img
+                              src="/猫の手のフリー素材1.png"
+                              alt="いいね"
+                              className={`${styles.likeIcon} ${isLiked ? styles.liked : ""}`}
+                            />
+                            <span className={`${styles.likeCount} ${isLiked ? styles.liked : ""}`}>
+                              {excuse.likeCount}
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className={styles.emptyState}>
+              <p className={styles.emptyStateText}>このタグに関連する言い訳はまだありません</p>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* サイドバー - タグ一覧 */}
+      <aside style={{
+        width: 280,
+        background: "#fff6e9",
+        padding: 16,
+        borderRadius: 12,
+        border: "2px solid #c3af96",
+        display: "flex",
+        flexDirection: "column",
+        overflowY: "auto",
+        gap: 12,
+        height: "fit-content",
+        position: "sticky",
+        top: 20,
+      }}>
+        <h3 style={{
+          fontSize: "0.9rem",
+          fontWeight: "700",
+          color: "#665440",
+          margin: "0 0 8px 0",
+        }}>
+          タグ一覧
+        </h3>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {allTags.length > 0 ? (
+            allTags.map((t) => (
+              <Link
+                key={t.id}
+                href={`/tag-ranking/${t.id}`}
                 style={{
-                  display: "flex",
-                  gap: 15,
-                  alignItems: "flex-start",
+                  background: t.id === tag?.id ? "#c3af96" : "#fff",
+                  color: t.id === tag?.id ? "#fff" : "#665440",
+                  padding: "10px",
+                  borderRadius: "8px",
+                  border: "1px solid #dfc9ab",
+                  fontWeight: t.id === tag?.id ? "600" : "500",
+                  textDecoration: "none",
+                  cursor: "pointer",
+                  transition: "all 0.25s ease",
+                }}
+                onMouseEnter={(e) => {
+                  if (t.id !== tag?.id) {
+                    e.currentTarget.style.background = "#e8d4c0";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (t.id !== tag?.id) {
+                    e.currentTarget.style.background = "#fff";
+                  }
                 }}
               >
-                {/* ランキング番号（左側） */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: "#4CAF50",
-                    color: "#fff",
-                    width: 50,
-                    height: 50,
-                    borderRadius: "50%",
-                    fontWeight: "bold",
-                    fontSize: 20,
-                    flexShrink: 0,
-                    marginTop: 5,
-                  }}
-                >
-                  {idx + 1}
-                </div>
-
-                {/* 言い訳カード */}
-                <div
-                  style={{
-                    flex: 1,
-                    padding: 20,
-                    background: "#fff",
-                    border: "1px solid #ddd",
-                    borderRadius: 3,
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                  }}
-                >
-                  {/* 言い訳テキスト */}
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 10 }}>
-                    <img
-                      src="/猫アイコン1.png"
-                      alt="AIの言い訳"
-                      style={{
-                        width: 35,
-                        height: 35,
-                        flexShrink: 0,
-                        marginTop: 2,
-                      }}
-                    />
-                    <p
-                      style={{
-                        fontSize: 20,
-                        fontWeight: 500,
-                        lineHeight: 1.6,
-                        paddingTop: 3,
-                      }}
-                    >
-                      {excuse.excuseText}
-                    </p>
-                  </div>
-
-                  {/* メタ情報 */}
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 9,
-                      fontSize: 15,
-                      color: "#666",
-                      marginBottom: 10,
-                    }}
-                  >
-                    <img
-                      src="/状況.png"
-                      alt="状況アイコン"
-                      style={{
-                        width: 25,
-                        height: 25,
-                        marginLeft: 4,
-                        filter: "grayscale(100%)",
-                      }}
-                    />
-                    <div>
-                      状況: <span style={{ color: "#333" }}>{excuse.situation || "未入力"}</span>
-                    </div>
-                  </div>
-
-                  {/* チャット情報といいねボタン */}
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      paddingTop: 10,
-                      borderTop: "1px solid #eee",
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: 15, color: "#999", marginBottom: 5 }}>
-                        チャットタイトル: <span style={{ color: "#666" }}>{excuse.chat.title}</span>
-                      </div>
-                      <div style={{ fontSize: 13, color: "#999" }}>
-                        {new Date(excuse.createdAt).toLocaleDateString("ja-JP")}
-                      </div>
-                    </div>
-
-                    {/* いいねボタン（猫の手アイコン） */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <button
-                        onClick={() => handleLike(excuse.id)}
-                        style={{
-                          background: isLiked ? "rgba(217,141,118,0.63)" : "#ffffff",
-                          border: "#999999",
-                          cursor: "pointer",
-                          padding: "8px 12px",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                          transition: "all 0.2s ease",
-                          borderRadius: "8px",
-                          opacity: 1,
-                        }}
-                      >
-                        <img
-                          src="/猫の手のフリー素材1.png"
-                          alt="いいね"
-                          style={{
-                            width: 24,
-                            height: 24,
-                            filter: isLiked ? "none" : "grayscale(50%)",
-                            transition: "all 0.2s ease",
-                          }}
-                        />
-                        <span
-                          style={{
-                            fontSize: 14,
-                            fontWeight: 600,
-                            color: isLiked ? "#5c5c5c" : "#999",
-                            transition: "all 0.2s ease",
-                          }}
-                        >
-                          {excuse.likeCount}
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                {t.title}
+              </Link>
+            ))
+          ) : (
+            <p style={{
+              fontSize: "0.85rem",
+              color: "#9a6044",
+              margin: 0,
+              fontStyle: "italic",
+            }}>
+              タグがありません
+            </p>
+          )}
         </div>
-      ) : (
-        <div
-          style={{
-            padding: 40,
-            textAlign: "center",
-            background: "#f9f9f9",
-            borderRadius: 8,
-            color: "#999",
-          }}
-        >
-          <p>このタグに関連する言い訳はまだありません</p>
-        </div>
-      )}
+      </aside>
     </div>
   );
 }

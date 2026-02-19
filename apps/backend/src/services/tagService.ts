@@ -1,119 +1,27 @@
 // タグapiのサービス層
 import prisma from "../db/prismaClient.js";
 
-// 全タグ取得（削除されていないタグのみ）
+// 全タグ取得（システムタグのみ）
 export async function getAllTags() {
   const tags = await prisma.tag.findMany({
-    where: {
-      isDeleted: false,
-    },
-    select: {
-      id: true,
-      title: true,
-      isSystemTag: true,
-      isDeleted: true,
-      createdAt: true,
-      userId: true,
-      user: {
-        select: {
-          id: true,
-          nickname: true,
-          email: true,
-        },
-      },
-    },
-    orderBy: { createdAt: "desc" },
+    orderBy: { createdAt: "asc" },
   });
   return tags;
 }
 
-// タグ新規作成
+// タグ新規作成（無効化：システムタグのみなので無効）
 export async function createTag({ title, userUid }: { title: string; userUid: string | undefined }) {
-  // タイトルの重複チェック
-  const exists = await prisma.tag.findUnique({ where: { title } });
-  if (exists) throw new Error("同じタイトルのタグが既に存在します");
-
-  let userId: string | null = null;
-  if (userUid) {
-    const user = await prisma.user.findUnique({ where: { uid: userUid } });
-    if (!user) throw new Error("User not found");
-    userId = user.id;
-  }
-
-  const tag = await prisma.tag.create({
-    data: { title, userId },
-  });
-  return tag;
+  throw new Error("タグ作成は無効です。システム管理者のみがタグを管理できます。");
 }
 
-// タグ削除（論理削除）
+// タグ削除（無効化：システムタグのみなので無効）
 export async function deleteTag({ id, userUid }: { id: string; userUid: string | undefined }) {
-  const tag = await prisma.tag.findUnique({ where: { id } });
-  if (!tag) throw new Error("タグが見つかりません");
-
-  // システムタグは削除不可
-  if (tag.isSystemTag) {
-    throw new Error("システムタグは削除できません");
-  }
-
-  // 作成者のみが削除可能
-  if (userUid) {
-    const user = await prisma.user.findUnique({ where: { uid: userUid } });
-    if (!user) throw new Error("User not found");
-
-    if (tag.userId !== user.id) {
-      throw new Error("このタグは削除できません（作成者のみが削除可能です）");
-    }
-  }
-
-  // 論理削除
-  const deletedTag = await prisma.tag.update({
-    where: { id },
-    data: { isDeleted: true },
-  });
-  return deletedTag;
+  throw new Error("タグ削除は無効です。システム管理者のみがタグを管理できます。");
 }
 
-// タグ名を更新
+// タグ名を更新（無効化：システムタグのみなので無効）
 export async function updateTag({ id, title, userUid }: { id: string; title: string; userUid: string | undefined }) {
-  const tag = await prisma.tag.findUnique({ where: { id } });
-  if (!tag) throw new Error("タグが見つかりません");
-
-  // システムタグは編集不可
-  if (tag.isSystemTag) {
-    throw new Error("システムタグは編集できません");
-  }
-
-  // 作成者のみが編集可能
-  if (userUid) {
-    const user = await prisma.user.findUnique({ where: { uid: userUid } });
-    if (!user) throw new Error("User not found");
-
-    if (tag.userId !== user.id) {
-      throw new Error("このタグは編集できません（作成者のみが編集可能です）");
-    }
-  }
-
-  // タイトルの重複チェック（同じタイトルは許可）
-  if (title !== tag.title) {
-    const exists = await prisma.tag.findUnique({ where: { title } });
-    if (exists) throw new Error("同じタイトルのタグが既に存在します");
-  }
-
-  const updatedTag = await prisma.tag.update({
-    where: { id },
-    data: { title },
-    include: {
-      user: {
-        select: {
-          id: true,
-          nickname: true,
-          email: true,
-        },
-      },
-    },
-  });
-  return updatedTag;
+  throw new Error("タグ更新は無効です。システム管理者のみがタグを管理できます。");
 }
 
 // 言い訳にタグを追加
