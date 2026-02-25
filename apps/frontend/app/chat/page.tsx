@@ -3,20 +3,16 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import LogoutButton from "@/app/_components/GoogleButton/logout";
 import SaveExcuseModal from "@/app/_components/chat/SaveExcuseModal";
-import {
-  PrimaryButton,
-  SendButton,
-  NavButton,
-  ActionButton,
-  ActionButtonSuccess,
-  ActionButtonHide,
-  MenuOption,
-  PopupButton,
-  DialogButton,
-  ModalButton,
-  CreateModalButton,
-  MenuButton,
-} from "@/app/_components/buttons";
+import ChatSidebar from "@/app/_components/chat/ChatSidebar";
+import AnswerDisplay from "@/app/_components/chat/AnswerDisplay";
+import PromptSection from "@/app/_components/chat/PromptSection";
+import CreateChatModal from "@/app/_components/chat/CreateChatModal";
+import DeleteConfirmDialog from "@/app/_components/chat/DeleteConfirmDialog";
+import EditTitleModal from "@/app/_components/chat/EditTitleModal";
+import PopupNotification from "@/app/_components/chat/PopupNotification";
+import RightSidebar from "@/app/_components/chat/RightSidebar";
+import SuccessHistory from "@/app/_components/chat/SuccessHistory";
+import HiddenAnswers from "@/app/_components/chat/HiddenAnswers";
 import {
   fetchChats,
   fetchChatDetail,
@@ -576,185 +572,76 @@ export default function ChatPage() {
       >
         ⋮
       </button>
+
       {/* 左サイドバー */}
-      <aside className={`${styles.sidebar} ${showSidebar ? styles.open : ''}`}>
-        <PrimaryButton onClick={() => setShowCreate(true)}>
-          チャット新規作成
-        </PrimaryButton>
-        <div className={styles.chatListContainer}>
-          {chats.map((c) => (
-            <div
-              key={c.id}
-              className={`${styles.chatItemContainer} ${c.id === selectedChat ? styles.active : ''}`}
-            >
-              <div
-                className={styles.chatItemTitle}
-                onClick={() => setSelectedChat(c.id)}
-              >
-                {c.title}
-              </div>
-              <div className={styles.chatMenuButtonContainer}>
-                <MenuButton
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setOpenMenuChatId(openMenuChatId === c.id ? null : c.id);
-                  }}
-                >
-                  ⋯
-                </MenuButton>
-                {openMenuChatId === c.id && (
-                  <div className={styles.chatMenuDropdown}>
-                    <MenuOption
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditTitleChatId(c.id);
-                        setEditTitleValue(c.title);
-                      }}
-                    >
-                      編集
-                    </MenuOption>
-                    <MenuOption
-                      isDelete={true}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const chatAnswers = chatAnswerHistory[c.id] ?? [];
-                        const hasTaggedExcuses = chatAnswers.some(group =>
-                          group.answers.some(answer => {
-                            return !answer.deleted && answer.tags && answer.tags.length > 0;
-                          })
-                        );
-                        setChatWithTaggedExcuses(hasTaggedExcuses);
-                        setDeleteConfirmChatId(c.id);
-                      }}
-                    >
-                      削除
-                    </MenuOption>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div style={{ marginTop: "auto", paddingTop: 16 }}>
-          <LogoutButton />
-        </div>
-      </aside>
+      <ChatSidebar
+        chats={chats}
+        selectedChat={selectedChat}
+        onSelectChat={setSelectedChat}
+        onCreateChat={() => setShowCreate(true)}
+        onEditChat={(chatId, title) => {
+          setEditTitleChatId(chatId);
+          setEditTitleValue(title);
+        }}
+        onDeleteChat={(chatId) => {
+          const chatAnswers = chatAnswerHistory[chatId] ?? [];
+          const hasTaggedExcuses = chatAnswers.some(group =>
+            group.answers.some(answer => {
+              return !answer.deleted && answer.tags && answer.tags.length > 0;
+            })
+          );
+          setChatWithTaggedExcuses(hasTaggedExcuses);
+          setDeleteConfirmChatId(chatId);
+        }}
+        openMenuChatId={openMenuChatId}
+        onToggleMenu={(chatId) =>
+          setOpenMenuChatId(openMenuChatId === chatId ? null : chatId)
+        }
+        showSidebar={showSidebar}
+      />
+
       {/* 中央チャットビュー */}
       <main className={styles.chatArea}>
         <div className={styles.chatAreaContent}>
           <div style={{ marginBottom: 16, display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
-            <div className={styles.answerHeader}>
-              <img
-                src="/猫アイコン1.png"
-                alt="猫アイコン"
-                style={{ width: 40, height: 40, paddingTop: 3 }}
-              />
-              <h2 className={styles.answerTitle}>生成された言い訳</h2>
-            </div>
-            <div className={styles.answerDisplayRow}>
-              {/* 前の回答ボタン */}
-              <NavButton
-                onClick={showPreviousAnswer}
-                disabled={!currentAnswerGroup || currentAnswerGroup.answers.length <= 1}
-              >
-                ◀
-              </NavButton>
-              {/* AIの回答 */}
-              <div key="current-answer" className={`${styles.answerBox} ${currentAnswer?.success ? styles.success : ''} ${currentAnswer?.deleted && showHiddenAnswers[selectedChat!] ? styles.deleted : ''}`}>
-                {currentAnswer?.deleted && showHiddenAnswers[selectedChat!] && (
-                  <div className={styles.deletedLabel}>非表示</div>
-                )}
-                <div className={`${styles.answerBoxContent} ${currentAnswer?.deleted && showHiddenAnswers[selectedChat!] ? styles.deleted : ''}`}>
-                  {currentAnswer?.text || (messages.filter(m => m.role === "ai").slice(-1)[0]?.text || "AIの回答を待っています...")}
-                </div>
-              </div>
-              {/* 次の回答ボタン */}
-              <NavButton
-                onClick={showNextAnswer}
-                disabled={!currentAnswerGroup || currentAnswerGroup.answers.length <= 1}
-              >
-                ▶
-              </NavButton>
-            </div>
-          </div>
-          {/*回答のページ数表示*/}
-          {currentAnswerGroup && validAnswers.length > 0 && (
-            <div className={styles.answerPagination}>
-              <span className={styles.answerPageNumber}>
-                {currentAnswer ? (() => {
-                  const currentAnswerIndex = currentAnswerGroup.answers.findIndex(a => a === currentAnswer);
-                  if (currentAnswerIndex >= 0) {
-                    const position = currentAnswerGroup.answers
-                      .slice(0, currentAnswerIndex + 1)
-                      .filter(a => !a.deleted).length;
-                    return `${position}/${validAnswers.length}`;
-                  }
-                  return `1/${validAnswers.length}`;
-                })() : `1/${validAnswers.length}`}
-              </span>
-            </div>
-          )}
-          <div className={styles.answerButtonRow}>
-            <ActionButtonSuccess
-              onClick={markSuccess}
-              disabled={currentAnswer?.success}
-            >
-              成功
-            </ActionButtonSuccess>
-            <ActionButtonHide
-              onClick={hideAnswer}
-              disabled={!currentAnswer || currentAnswer.deleted || currentAnswer.success}
-            >
-              非表示
-            </ActionButtonHide>
-            {currentAnswer?.deleted && (
-              <ActionButton
-                onClick={undoHideAnswer}
-              >
-                非表示を解除
-              </ActionButton>
-            )}
-            <ActionButton
-              onClick={getAnotherAnswer}
-              disabled={loading || !currentAnswerGroup}
-            >
-              {loading ? "生成中..." : "他の回答をもらう"}
-            </ActionButton>
-          </div>
-          <div className={styles.promptSection}>
-            <label className={styles.promptLabel}>
-              <img
-                src="/状況.png"
-                alt="状況アイコン"
-                className={styles.promptIcon}
-              />
-              今の状況をAIに相談してみましょう
-            </label>
-            <textarea
-              value={prompt}
-              onChange={(e) => {
+            {/* 回答表示 */}
+            <AnswerDisplay
+              currentAnswerGroup={currentAnswerGroup}
+              currentAnswer={currentAnswer}
+              validAnswers={validAnswers}
+              loading={loading}
+              showHiddenAnswers={showHiddenAnswers[selectedChat!] ?? false}
+              onPreviousAnswer={showPreviousAnswer}
+              onNextAnswer={showNextAnswer}
+              onMarkSuccess={markSuccess}
+              onHideAnswer={hideAnswer}
+              onUndoHideAnswer={undoHideAnswer}
+              onGetAnotherAnswer={getAnotherAnswer}
+              lastAiMessage={messages.filter(m => m.role === "ai").slice(-1)[0]?.text || ""}
+            />
+
+            {/* プロンプト入力 */}
+            <PromptSection
+              prompt={prompt}
+              loading={loading}
+              onPromptChange={(value) => {
                 if (selectedChat) {
                   setChatPrompts((prev) => ({
                     ...prev,
-                    [selectedChat]: e.target.value,
+                    [selectedChat]: value,
                   }));
                 } else {
                   const tempChatId = "temp-chat";
                   setChatPrompts((prev) => ({
                     ...prev,
-                    [tempChatId]: e.target.value,
+                    [tempChatId]: value,
                   }));
                 }
               }}
-              className={styles.promptTextarea}
-              placeholder="要望や状況を入力して AI に相談"
+              onSendPrompt={sendPrompt}
             />
-            <div className={styles.promptButtonContainer}>
-              <SendButton onClick={sendPrompt} disabled={loading}>
-                {loading ? "送信中..." : "送信"}
-              </SendButton>
-            </div>
-            {/* 成功の履歴ボタン */}
+
+            {/* 成功一覧ボタン */}
             <div className={styles.historyToggleContainer}>
               <button
                 onClick={() => setShowSuccessHistory(!showSuccessHistory)}
@@ -772,143 +659,62 @@ export default function ChatPage() {
                 {showHiddenAnswers[selectedChat!] ? "非表示一覧" : "非表示一覧"}
               </button>
             </div>
-            {/* 成功の履歴一覧 */}
-            {showSuccessHistory && answerHistory.length > 0 && answerHistory.some(g => g.answers.some(a => a.success && !a.deleted)) && (
-              <div className={styles.successHistoryContainer}>
-                <div className={styles.historyScrollContainer}>
-                  {answerHistory.map((group, idx) => {
-                    const successAnswers = group.answers.filter(a => a.success && !a.deleted);
-                    return successAnswers.length > 0 ? successAnswers.map((successAnswer, ansIdx) => (
-                      <div
-                        key={`${idx}-${ansIdx}`}
-                        onClick={() => setCurrentGroupIndex((prev) => ({ ...prev, [selectedChat!]: idx }))}
-                        className={`${styles.historyCard} ${idx === currentGroupIdx ? styles.active : ''}`}
-                      >
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const answerIndexInGroup = group.answers.findIndex((a) => a === successAnswer);
-                            cancelSuccess(idx, answerIndexInGroup);
-                          }}
-                          className={styles.historyCardCloseButton}
-                        >
-                          ✕
-                        </button>
-                        <div className={styles.historyCardTitle}>
-                          {successAnswer.text.substring(0, 80)}
-                        </div>
-                        <div className={styles.historyCardSubtitle}>
-                          {group.prompt.substring(0, 40)}
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setLastExcuseText(successAnswer.text);
-                            setShowSaveModal(true);
-                          }}
-                          className={styles.historySaveButton}
-                        >
-                          <img
-                            src="/ノートアイコン.png"
-                            alt="保存"
-                            className={styles.historySaveButtonIcon}
-                          />
-                        </button>
-                      </div>
-                    )) : null;
-                  })}
-                </div>
-              </div>
+
+            {/* 成功履歴 */}
+            {showSuccessHistory && selectedChat && (
+              <SuccessHistory
+                show={true}
+                answerHistory={answerHistory}
+                currentGroupIdx={currentGroupIdx}
+                showHiddenAnswers={showHiddenAnswers}
+                onSelectGroup={(idx) =>
+                  setCurrentGroupIndex((prev) => ({ ...prev, [selectedChat]: idx }))
+                }
+                onToggleHiddenAnswers={toggleShowHiddenAnswers}
+                onSaveExcuse={(text) => {
+                  setLastExcuseText(text);
+                  setShowSaveModal(true);
+                }}
+                onCancelSuccess={(groupIdx, answerIdx) => {
+                  cancelSuccess(groupIdx, answerIdx);
+                }}
+              />
             )}
-            {/* 非表示の履歴一覧 */}
-            {showHiddenAnswers[selectedChat!] && answerHistory.length > 0 && (
-              <div className={styles.hiddenHistoryContainer}>
-                <div className={styles.historyScrollContainer}>
-                  {answerHistory.map((group, idx) => {
-                    const hiddenAnswers = group.answers.filter(a => a.deleted);
-                    return hiddenAnswers.length > 0 ? hiddenAnswers.map((hiddenAnswer, ansIdx) => (
-                      <div
-                        key={`${idx}-${ansIdx}`}
-                        onClick={() => setCurrentGroupIndex((prev) => ({ ...prev, [selectedChat!]: idx }))}
-                        className={`${styles.hiddenHistoryCard} ${idx === currentGroupIdx ? styles.active : ''}`}
-                      >
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const answerIndexInGroup = group.answers.findIndex((a) => a === hiddenAnswer);
-                            cancelHide(idx, answerIndexInGroup);
-                          }}
-                          className={styles.hiddenHistoryCardCloseButton}
-                        >
-                          ✕
-                        </button>
-                        <div className={styles.hiddenHistoryCardTitle}>
-                          {group.prompt.substring(0, 35)}
-                        </div>
-                        <div className={styles.hiddenHistoryCardText}>
-                          {hiddenAnswer.text.substring(0, 80)}
-                        </div>
-                      </div>
-                    )) : null;
-                  })}
-                </div>
-              </div>
+
+            {/* 非表示履歴 */}
+            {showHiddenAnswers[selectedChat!] && selectedChat && (
+              <HiddenAnswers
+                show={true}
+                answerHistory={answerHistory}
+                currentGroupIdx={currentGroupIdx}
+                onSelectGroup={(idx) =>
+                  setCurrentGroupIndex((prev) => ({ ...prev, [selectedChat]: idx }))
+                }
+                onCancelHide={(groupIdx, answerIdx) => {
+                  cancelHide(groupIdx, answerIdx);
+                }}
+              />
             )}
           </div>
         </div>
       </main>
+
       {/* 右サイドバー */}
-      <aside className={`${styles.rightSidebar} ${showRightSidebar ? styles.open : ''}`}>
-        {tags.length > 0 ? (
-          <div>
-            <h4 style={{
-              fontSize: "0.9rem",
-              fontWeight: "700",
-              color: "#665440",
-              marginBottom: "8px",
-            }}>
-              タグ一覧
-            </h4>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {tags.map((t) => (
-                <div
-                  key={t.id || t.title}
-                  style={{
-                    background: "#fff",
-                    padding: 10,
-                    borderRadius: 8,
-                    border: "1px solid #dfc9ab",
-                    color: "#665440",
-                    fontWeight: "500",
-                    cursor: "pointer",
-                    transition: "all 0.25s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#c3af96";
-                    e.currentTarget.style.color = "#fff";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "#fff";
-                    e.currentTarget.style.color = "#665440";
-                  }}
-                  onClick={() => handleTagClick(t.id)}
-                >
-                  {t.title}
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
-      </aside>
+      <RightSidebar
+        tags={tags}
+        selectedChat={selectedChat}
+        showRightSidebar={showRightSidebar}
+      />
+
       {/* Create モーダル */}
-      {showCreate && (
-        <CreateModal
-          onClose={() => setShowCreate(false)}
-          onCreate={handleCreateChat}
-          isFirstChat={chats.length === 0}
-          onAlert={showAlert}
-        />
-      )}
+      <CreateChatModal
+        isOpen={showCreate}
+        isFirstChat={chats.length === 0}
+        onClose={() => setShowCreate(false)}
+        onCreate={handleCreateChat}
+        onAlert={showAlert}
+      />
+
       {/* Save Excuse モーダル */}
       <SaveExcuseModal
         isOpen={showSaveModal}
@@ -918,138 +724,42 @@ export default function ChatPage() {
         availableTags={tags}
         onTagsUpdated={handleFetchTags}
       />
-      {/* チャット削除確認ダイアログ */}
-      {deleteConfirmChatId && (
-        <div className={styles.dialogOverlay}>
-          <div className={styles.dialogContent}>
-            <h3 className={styles.dialogTitle}>本当にチャットを削除しますか？</h3>
-            {chatWithTaggedExcuses && (
-              <p className={styles.dialogWarning}>
-                ⚠️ ランキングに登録されている言い訳があります。本当に削除しますか？
-              </p>
-            )}
-            <p className={styles.dialogMessage}>このアクションは取り消せません。</p>
-            <div className={styles.dialogButtonsContainer}>
-              <DialogButton
-                variant="delete"
-                onClick={() => {
-                  handleDeleteChat(deleteConfirmChatId);
-                }}
-              >
-                はい
-              </DialogButton>
-              <DialogButton
-                variant="cancel"
-                onClick={() => {
-                  setDeleteConfirmChatId(null);
-                  setChatWithTaggedExcuses(false);
-                }}
-              >
-                いいえ
-              </DialogButton>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* チャットのタイトル編集モーダル */}
-      {editTitleChatId && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <h3 className={styles.modalTitle}>チャットタイトルを編集</h3>
-            <input
-              value={editTitleValue}
-              onChange={(e) => setEditTitleValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleUpdateChatTitle();
-                }
-              }}
-              className={styles.modalInput}
-              autoFocus
-            />
-            <div className={styles.modalButtonsContainer}>
-              <ModalButton
-                variant="cancel"
-                onClick={() => {
-                  setEditTitleChatId(null);
-                  setEditTitleValue("");
-                }}
-              >
-                キャンセル
-              </ModalButton>
-              <ModalButton
-                variant="submit"
-                onClick={handleUpdateChatTitle}
-              >
-                更新
-              </ModalButton>
-            </div>
-          </div>
-        </div>
-      )}
+
+      {/* 削除確認ダイアログ */}
+      <DeleteConfirmDialog
+        isOpen={deleteConfirmChatId !== null}
+        hasTaggedExcuses={chatWithTaggedExcuses}
+        onConfirm={() => deleteConfirmChatId && handleDeleteChat(deleteConfirmChatId)}
+        onCancel={() => {
+          setDeleteConfirmChatId(null);
+          setChatWithTaggedExcuses(false);
+        }}
+      />
+
+      {/* タイトル編集モーダル */}
+      <EditTitleModal
+        isOpen={editTitleChatId !== null}
+        initialTitle={editTitleValue}
+        onCancel={() => {
+          setEditTitleChatId(null);
+          setEditTitleValue("");
+        }}
+        onSubmit={(newTitle) => {
+          setEditTitleValue(newTitle);
+          handleUpdateChatTitle();
+        }}
+      />
+
       {/* ポップアップ通知 */}
-      {showPopup && (
-        <div className={styles.popupContainer}>
-          <p className={styles.popupMessage}>{popupMessage}</p>
-          <div className={styles.popupButtonsContainer}>
-            <PopupButton onClick={() => setShowPopup(false)}>
-              OK
-            </PopupButton>
-          </div>
-        </div>
-      )}
-      {/* ポップアップ背景オーバーレイ */}
-      {showPopup && <div className={styles.popupOverlay} onClick={() => setShowPopup(false)} />}
+      <PopupNotification
+        isOpen={showPopup}
+        message={popupMessage}
+        onClose={() => setShowPopup(false)}
+      />
     </div>
   );
 }
-/* Create モーダル */
-function CreateModal({ onClose, onCreate, isFirstChat, onAlert }: { onClose: () => void; onCreate: (title: string) => void; isFirstChat: boolean; onAlert: (message: string) => void }) {
-  const [title, setTitle] = useState("");
 
-  const submit = () => {
-    if (!title.trim()) {
-      onAlert("タイトルを入力してください");
-      return;
-    }
-    onCreate(title);
-  };
 
-  const handleCancel = () => {
-    onClose();
-  };
 
-  return (
-    <div className={styles.createModalOverlay}>
-      <div className={styles.createModalContent}>
-        <h2 className={styles.createModalTitle}>新しいチャットを作成しましょう！</h2>
-        <p className={styles.createModalSubtitle}>
-          {isFirstChat ? "タイトルを入力してください" : "タイトルを入力してください。"}
-        </p>
-        <div className={styles.createModalInputContainer}>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className={styles.createModalInput}
-            placeholder="例: 課題が終わらない"
-            autoFocus
-          />
-        </div>
-        <div className={styles.createModalButtonsContainer}>
-          <CreateModalButton
-            variant="cancel"
-            onClick={handleCancel}
-          >
-            {isFirstChat ? "キャンセル" : "キャンセル"}
-          </CreateModalButton>
-          <CreateModalButton
-            variant="submit"
-            onClick={submit}
-          >
-            作成
-          </CreateModalButton>
-        </div>
-      </div>
-    </div>
-  );
-}
+
