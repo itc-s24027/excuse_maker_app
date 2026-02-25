@@ -10,11 +10,37 @@
 
 .chatArea {
   flex: 1;
+  background: #f5f1eb;
+  padding: 20px;
+  border-radius: 12px;
+  border: 2px solid #c3af96;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+.chatAreaContent {
+  max-width: 900px;
+  margin: 0 auto;
+  padding-top: 20px;
+  flex: 1;
+  overflow: auto;
+  width: 100%;
 }
 
 .sidebar {
+  width: 280px;
+  background: #fff6e9;
+  padding: 16px;
+  border-radius: 12px;
+  border: 2px solid #c3af96;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  gap: 16px;
+}
+
+.rightSidebar {
   width: 280px;
   background: #fff6e9;
   padding: 16px;
@@ -40,53 +66,61 @@
   background: #fafafa;
 }
 
-.chatItem {
-  padding: 12px;
+.createChatButton {
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+  background: #665440;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.createChatButton:hover {
+  background: #9a6044;
+}
+
+.chatListContainer {
+  margin-top: 16px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.chatItemContainer {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  margin-top: 8px;
   background: #fff;
   border-radius: 8px;
-  border: 1px solid #ddd;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 14px;
+  border: 1px solid #dfc9ab;
   color: #665440;
+  font-weight: 500;
+  transition: all 0.25s ease;
+  gap: 8px;
 }
 
-.chatItem:hover {
-  background: #f5f5f5;
-  border-color: #c3af96;
+.chatItemContainer:hover {
+  background: #f0ebe3;
 }
 
-.chatItem.active {
-  background: #e8d4c0;
-  border-color: #c3af96;
-  font-weight: 600;
+.chatItemContainer.active {
+  background: #c3af96;
+  color: #fff;
 }
 
 .chatItemTitle {
   flex: 1;
-  white-space: nowrap;
+  cursor: pointer;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin: 0;
+  white-space: nowrap;
 }
 
-.chatMenuButton {
-  background: transparent;
-  color: #665440;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  fontWeight: bold;
-  padding: 4px 8px;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.chatMenuButton:hover {
-  color: #c3af96;
+.chatMenuButtonContainer {
+  position: relative;
 }
 
 .chatMenuDropdown {
@@ -94,52 +128,12 @@
   top: 100%;
   right: 0;
   background: #fff;
-  border: 1px solid #ddd;
-  borderRadius: 6px;
-  boxShadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  zIndex: 100;
-  marginTop: 4px;
-}
-
-.chatMenuOption {
-  display: block;
-  width: 100%;
-  padding: 10px 16px;
-  background: transparent;
-  border: none;
-  color: #d32f2f;
-  cursor: pointer;
-  fontSize: 14px;
-  fontWeight: 500;
-  textAlign: left;
-  transition: all 0.2s ease;
-  borderTop: 1px solid #f0e8e0;
-}
-
-.chatMenuOption:first-child {
-  borderTop: none;
-}
-
-.chatMenuOption:hover {
-  background: #ffe0e0;
-}
-
-/* Create Button */
-.createButton {
-  padding: 12px;
-  background: #665440;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-  font-family: var(--font-noto-sans-jp);
-  transition: all 0.25s ease;
-}
-
-.createButton:hover {
-  background: #9a6044;
+  border: 1px solid #dfc9ab;
+  border-radius: 6px;
+  padding: 8px 0;
+  min-width: 120px;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* Main Content */
@@ -171,59 +165,205 @@
 }
 
 /* Prompt Input */
-.promptInputContainer {
+.promptSection {
+  margin-top: 28px;
   display: flex;
-  gap: 8px;
-  align-items: flex-end;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.promptInput {
-  flex: 1;
-  min-height: 100px;
-  padding: 12px;
-  border: 2px solid #dfc9ab;
-  border-radius: 8px;
-  font-family: var(--font-noto-sans-jp);
-  font-size: 14px;
+.promptLabel {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-top: 20px;
+  font-size: 1.3rem;
+  font-weight: 500;
   color: #665440;
-  resize: vertical;
-  transition: all 0.2s ease;
 }
 
-.promptInput:focus {
-  outline: none;
-  border-color: #c3af96;
-  box-shadow: 0 0 0 3px rgba(195, 175, 150, 0.1);
+.promptIcon {
+  width: 32px;
+  height: 32px;
+  vertical-align: middle;
+  margin-right: 8px;
 }
 
-.sendButton {
-  padding: 12px 20px;
-  background: #4CAF50;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
+.promptTextarea {
+  width: 100%;
+  height: 140px;
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 20px;
+  border: 2px solid #c3af96;
   font-family: var(--font-noto-sans-jp);
+  color: #665440;
+  background: #fff;
+  resize: none;
   transition: all 0.25s ease;
-  white-space: nowrap;
 }
 
-.sendButton:hover:not(:disabled) {
-  background: #45a049;
+.promptTextarea:focus {
+  outline: none;
+  border-color: #9a6044;
+  box-shadow: 0 0 0 3px rgba(154, 96, 68, 0.1);
 }
 
-.sendButton:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.promptButtonContainer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
 }
 
 /* Answer Display */
-.answerContainer {
+.answerSection {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  flex: 1;
+  min-height: 0;
+  margin-bottom: 16px;
+}
+
+.answerHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.answerTitle {
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: #665440;
+  margin: 0;
+}
+
+.answerDisplayRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 16px 0;
+  flex: 1;
+  min-height: 0;
+}
+
+.answerBox {
+  flex: 1;
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  font-size: 25px;
+  color: #665440;
+  border: 1px solid #dfc9ab;
+  line-height: 1.8;
+  position: relative;
+  height: 280px;
+  max-height: 280px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  overflow: auto;
+}
+
+.answerBox.success {
+  background: var(--success-bg-light);
+  border: 2px solid var(--success-color-light);
+}
+
+.answerBox.deleted {
+  opacity: 0.5;
+  border: 1px solid #ccc;
+}
+
+.answerBoxContent {
+  opacity: 1;
+  flex: 1;
+}
+
+.answerBoxContent.deleted {
+  opacity: 0.3;
+}
+
+.deletedLabel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 16px;
+  font-weight: 600;
+  color: #999;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 8px 16px;
+  border-radius: 8px;
+}
+
+.answerPagination {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.answerPageNumber {
+  font-size: 18px;
+  color: #9a6044;
+  font-weight: 600;
+}
+
+.answerButtonRow {
+  display: flex;
+  gap: 12px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.answerActionButton {
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+  background: #665440;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.answerActionButton:hover:not(:disabled) {
+  background: #9a6044;
+}
+
+.answerActionButton:disabled {
+  color: #ccc;
+  background: #ddd;
+  cursor: not-allowed;
+}
+
+.answerActionButton.success {
+  background: var(--success-color-light);
+}
+
+.answerActionButton.success:hover:not(:disabled) {
+  background: var(--success-hover);
+}
+
+.answerActionButton.hide {
+  background: #c87960;
+}
+
+.answerActionButton.hide:hover:not(:disabled) {
+  background: #a85d48;
+}
+
+.answerActionButton.unhide {
+  background: #ff9800;
+}
+
+.answerActionButton.unhide:hover {
+  background: #e68900;
 }
 
 .answerBox {
@@ -306,39 +446,247 @@
 }
 
 /* Success History */
-.historySection {
+.historyToggleContainer {
   margin-top: 16px;
-}
-
-.historySectionTitle {
-  font-size: 14px;
-  font-weight: 600;
-  color: #665440;
-  margin-bottom: 8px;
-}
-
-.historyList {
   display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  padding: 8px;
-  background: #fafafa;
-  border-radius: 6px;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-.historyItem {
-  min-width: 250px;
-  padding: 12px;
+.historyToggleButton {
+  flex: 0 0 auto;
+  padding: 12px 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: #665440;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.historyToggleButton:hover:not(:disabled) {
+  opacity: 0.8;
+}
+
+.historyToggleButton:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.historyToggleButton.success {
+  background: var(--success-color-light);
+}
+
+.historyToggleButton.success:hover:not(:disabled) {
+  background: var(--success-hover);
+}
+
+.historyToggleButton.hidden {
+  background: #c87960;
+}
+
+.historyToggleButton.hidden:hover:not(:disabled) {
+  background: #a85d48;
+}
+
+.successHistoryContainer {
+  margin-top: 32px;
+  display: flex;
+  justify-content: center;
+}
+
+.historyScrollContainer {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  max-width: 100%;
+}
+
+.historyCard {
+  min-width: 280px;
+  max-width: 100%;
+  height: auto;
+  min-height: 160px;
+  padding: 18px;
   background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 2px solid var(--success-border);
+  transition: all 0.25s ease;
+  color: var(--success-color-light);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.historyCard:hover {
+  background: #e8f5e9;
+}
+
+.historyCard.active {
+  background: var(--success-color-light);
+  color: #fff;
+}
+
+.historyCardCloseButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--success-color-light);
+  background: transparent;
+  border: none;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.historyItem:hover {
-  background: #f5f5f5;
-  border-color: #c3af96;
+.historyCard.active .historyCardCloseButton {
+  color: #fff;
+}
+
+.historyCardCloseButton:hover {
+  transform: scale(1.2);
+}
+
+.historyCardTitle {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--success-color-light);
+  padding-right: 40px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.historyCard.active .historyCardTitle {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.historyCardSubtitle {
+  font-size: 14px;
+  color: rgba(76, 175, 80, 0.7);
+  font-weight: 500;
+}
+
+.historyCard.active .historyCardSubtitle {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.historySaveButton {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+}
+
+.historySaveButton:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.historySaveButtonIcon {
+  width: 38px;
+  height: 38px;
+}
+
+.hiddenHistoryContainer {
+  margin-top: 32px;
+  display: flex;
+  justify-content: center;
+}
+
+.hiddenHistoryCard {
+  min-width: 280px;
+  max-width: 100%;
+  height: auto;
+  min-height: 160px;
+  padding: 18px;
+  background: #fff;
+  border-radius: 10px;
+  cursor: pointer;
+  border: 2px solid #c87960;
+  transition: all 0.25s ease;
+  color: #d4957a;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.hiddenHistoryCard:hover {
+  background: #ffe8e0;
+}
+
+.hiddenHistoryCard.active {
+  background: #d4957a;
+  color: #fff;
+}
+
+.hiddenHistoryCardCloseButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  font-size: 14px;
+  font-weight: bold;
+  color: #d4957a;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.hiddenHistoryCard.active .hiddenHistoryCardCloseButton {
+  color: #fff;
+}
+
+.hiddenHistoryCardCloseButton:hover {
+  transform: scale(1.2);
+}
+
+.hiddenHistoryCardTitle {
+  font-size: 20px;
+  color: #d4957a;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.hiddenHistoryCard.active .hiddenHistoryCardTitle {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.hiddenHistoryCardText {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #d4957a;
+}
+
+.hiddenHistoryCard.active .hiddenHistoryCardText {
+  color: rgba(255, 255, 255, 0.95);
 }
 
 /* Tag List */
@@ -778,4 +1126,327 @@
     margin-top: 40px;
   }
 }
+
+/* Dialog Overlay */
+.dialogOverlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1001;
+}
+
+.dialogContent {
+  background: #fff6e9;
+  padding: 2rem;
+  border-radius: 16px;
+  max-width: 400px;
+  border: 2px solid #c3af96;
+  box-shadow: 0 8px 24px rgba(102, 84, 64, 0.2);
+}
+
+.dialogTitle {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #665440;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.dialogWarning {
+  font-size: 0.9rem;
+  color: #c87960;
+  margin-bottom: 1rem;
+  text-align: center;
+  font-weight: 600;
+  background-color: #ffe8e0;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #c87960;
+}
+
+.dialogMessage {
+  font-size: 0.95rem;
+  color: #9a6044;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.dialogButtonsContainer {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+/* Button Styles */
+.dialogButton {
+  padding: 10px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: 2px solid;
+}
+
+.dialogButtonDelete {
+  color: #fff;
+  background: #c87960;
+  border-color: #c87960;
+}
+
+.dialogButtonDelete:hover {
+  opacity: 0.9;
+}
+
+.dialogButtonCancel {
+  color: #665440;
+  background: #fff;
+  border-color: #c3af96;
+}
+
+.dialogButtonCancel:hover {
+  background: #f0ebe3;
+  border-color: #9a6044;
+}
+
+/* Modal Overlay */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1001;
+  padding: 2rem;
+}
+
+.modalContent {
+  background: #fff6e9;
+  padding: 2rem;
+  border-radius: 16px;
+  max-width: 500px;
+  border: 2px solid #c3af96;
+  box-shadow: 0 8px 24px rgba(102, 84, 64, 0.2);
+}
+
+.modalTitle {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #665440;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.modalInput {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 1rem;
+  border: 2px solid #c3af96;
+  border-radius: 10px;
+  font-family: var(--font-noto-sans-jp);
+  color: #665440;
+  background: #fff;
+  margin-bottom: 1.5rem;
+  transition: all 0.25s ease;
+  box-sizing: border-box;
+}
+
+.modalInput:focus {
+  outline: none;
+  border-color: #9a6044;
+  box-shadow: 0 0 0 3px rgba(154, 96, 68, 0.1);
+}
+
+.modalButtonsContainer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.modalButton {
+  padding: 10px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: 2px solid;
+}
+
+.modalButtonCancel {
+  color: #665440;
+  background: #fff;
+  border-color: #c3af96;
+}
+
+.modalButtonCancel:hover {
+  background: #f0ebe3;
+  border-color: #9a6044;
+}
+
+.modalButtonSubmit {
+  color: #fff;
+  background: #665440;
+  border-color: #665440;
+}
+
+.modalButtonSubmit:hover {
+  background: #9a6044;
+  border-color: #9a6044;
+}
+
+/* Create Modal */
+.createModalOverlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  padding: 2rem;
+}
+
+.createModalContent {
+  background: #fff6e9;
+  padding: 3rem;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 600px;
+  border: 2px solid #c3af96;
+  box-shadow: 0 8px 24px rgba(102, 84, 64, 0.2);
+}
+
+.createModalTitle {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #665440;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.createModalSubtitle {
+  font-size: 1rem;
+  color: #9a6044;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.createModalInputContainer {
+  margin-bottom: 2rem;
+}
+
+.createModalInput {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 1rem;
+  border: 2px solid #c3af96;
+  border-radius: 10px;
+  font-family: var(--font-noto-sans-jp);
+  color: #665440;
+  background: #fff;
+  transition: all 0.25s ease;
+}
+
+.createModalInput:focus {
+  outline: none;
+  border-color: #9a6044;
+  box-shadow: 0 0 0 3px rgba(154, 96, 68, 0.1);
+}
+
+.createModalButtonsContainer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.createModalButton {
+  padding: 12px 28px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  border: 2px solid;
+}
+
+.createModalButtonCancel {
+  color: #665440;
+  background: #fff;
+  border-color: #c3af96;
+}
+
+.createModalButtonCancel:hover {
+  background: #f0ebe3;
+  border-color: #9a6044;
+}
+
+.createModalButtonSubmit {
+  color: #fff;
+  background: #665440;
+  border-color: #665440;
+}
+
+.createModalButtonSubmit:hover {
+  background: #9a6044;
+  border-color: #9a6044;
+}
+
+/* Popup Notification */
+.popupOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 2000;
+}
+
+.popupContainer {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  z-index: 2001;
+  max-width: 400px;
+  min-width: 300px;
+  border: 2px solid #c3af96;
+}
+
+.popupMessage {
+  margin: 0 0 20px 0;
+  font-size: 16px;
+  color: #665440;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.popupButtonsContainer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.popupButton {
+  padding: 10px 20px;
+  background: #665440;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.25s ease;
+  font-family: var(--font-noto-sans-jp);
+}
+
+.popupButton:hover {
+  background: #9a6044;
+}
+
 
