@@ -1,4 +1,0 @@
-export {};
-// 目的: 一貫したログ出力（レベル、タイムスタンプ、JSON 出力等）を提供。開発時は console、本番はフォーマットを変えられるようにする。
-// 実装: 依存を増やさない軽量実装。LOG_LEVEL 環境変数で出力制御。
-//# sourceMappingURL=logger.js.map

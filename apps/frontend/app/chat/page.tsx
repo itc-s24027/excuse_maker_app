@@ -1349,7 +1349,7 @@ export default function ChatPage() {
                 color: "#665440",
                 margin: 0,
               }}>
-                猫様からのアドバイス
+                生成された言い訳
               </h2>
             </div>
 

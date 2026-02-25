@@ -1,1 +1,0 @@
-{"version":3,"file":"generateExcuse.mock.js","sourceRoot":"","sources":["../../../src/services/excuse/generateExcuse.mock.ts"],"names":[],"mappings":"AAQA,MAAM,CAAC,MAAM,kBAAkB,GAAmB,KAAK,EAAE,OAAO,EAAE,EAAE;IAChE,OAAO;QACH,IAAI,EAAE,QAAQ,OAAO,YAAY;KACpC,CAAC;AACN,CAAC,CAAC"}

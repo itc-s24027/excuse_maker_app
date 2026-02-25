@@ -86,9 +86,7 @@ export async function getExcusesByTag({ tagId }: { tagId: string }) {
     select: {
       id: true,
       title: true,
-      isSystemTag: true,
-      userId: true,
-      isDeleted: true,
+      createdAt: true,
     },
   });
 

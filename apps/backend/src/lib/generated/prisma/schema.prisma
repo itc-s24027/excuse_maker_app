@@ -24,7 +24,6 @@ model User {
 
   chats Chat[]
   likes Like[]
-  tags  Tag[]
 }
 
 model Chat {
@@ -57,15 +56,11 @@ model Excuse {
 }
 
 model Tag {
-  id          String   @id @default(uuid(7)) @db.VarChar(36)
-  title       String   @unique @db.VarChar(36)
-  userId      String?  @db.VarChar(36) // FK - nullable for system tags
-  isSystemTag Boolean  @default(false)
-  isDeleted   Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid(7)) @db.VarChar(36)
+  title     String   @unique @db.VarChar(36)
+  createdAt DateTime @default(now())
 
   // リレーション
-  user    User?       @relation(fields: [userId], references: [id])
   excuses ExcuseTag[]
 }
 

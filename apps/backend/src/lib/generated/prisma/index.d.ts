@@ -1319,13 +1319,11 @@ export namespace Prisma {
   export type UserCountOutputType = {
     chats: number
     likes: number
-    tags: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     chats?: boolean | UserCountOutputTypeCountChatsArgs
     likes?: boolean | UserCountOutputTypeCountLikesArgs
-    tags?: boolean | UserCountOutputTypeCountTagsArgs
   }
 
   // Custom InputTypes
@@ -1351,13 +1349,6 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountLikesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: LikeWhereInput
-  }
-
-  /**
-   * UserCountOutputType without action
-   */
-  export type UserCountOutputTypeCountTagsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: TagWhereInput
   }
 
 
@@ -1649,7 +1640,6 @@ export namespace Prisma {
     isDeleted?: boolean
     chats?: boolean | User$chatsArgs<ExtArgs>
     likes?: boolean | User$likesArgs<ExtArgs>
-    tags?: boolean | User$tagsArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -1687,7 +1677,6 @@ export namespace Prisma {
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     chats?: boolean | User$chatsArgs<ExtArgs>
     likes?: boolean | User$likesArgs<ExtArgs>
-    tags?: boolean | User$tagsArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -1698,7 +1687,6 @@ export namespace Prisma {
     objects: {
       chats: Prisma.$ChatPayload<ExtArgs>[]
       likes: Prisma.$LikePayload<ExtArgs>[]
-      tags: Prisma.$TagPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -2104,7 +2092,6 @@ export namespace Prisma {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     chats<T extends User$chatsArgs<ExtArgs> = {}>(args?: Subset<T, User$chatsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ChatPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     likes<T extends User$likesArgs<ExtArgs> = {}>(args?: Subset<T, User$likesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LikePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-    tags<T extends User$tagsArgs<ExtArgs> = {}>(args?: Subset<T, User$tagsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TagPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2574,30 +2561,6 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: LikeScalarFieldEnum | LikeScalarFieldEnum[]
-  }
-
-  /**
-   * User.tags
-   */
-  export type User$tagsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Tag
-     */
-    select?: TagSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Tag
-     */
-    omit?: TagOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: TagInclude<ExtArgs> | null
-    where?: TagWhereInput
-    orderBy?: TagOrderByWithRelationInput | TagOrderByWithRelationInput[]
-    cursor?: TagWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: TagScalarFieldEnum | TagScalarFieldEnum[]
   }
 
   /**
@@ -4875,27 +4838,18 @@ export namespace Prisma {
   export type TagMinAggregateOutputType = {
     id: string | null
     title: string | null
-    userId: string | null
-    isSystemTag: boolean | null
-    isDeleted: boolean | null
     createdAt: Date | null
   }
 
   export type TagMaxAggregateOutputType = {
     id: string | null
     title: string | null
-    userId: string | null
-    isSystemTag: boolean | null
-    isDeleted: boolean | null
     createdAt: Date | null
   }
 
   export type TagCountAggregateOutputType = {
     id: number
     title: number
-    userId: number
-    isSystemTag: number
-    isDeleted: number
     createdAt: number
     _all: number
   }
@@ -4904,27 +4858,18 @@ export namespace Prisma {
   export type TagMinAggregateInputType = {
     id?: true
     title?: true
-    userId?: true
-    isSystemTag?: true
-    isDeleted?: true
     createdAt?: true
   }
 
   export type TagMaxAggregateInputType = {
     id?: true
     title?: true
-    userId?: true
-    isSystemTag?: true
-    isDeleted?: true
     createdAt?: true
   }
 
   export type TagCountAggregateInputType = {
     id?: true
     title?: true
-    userId?: true
-    isSystemTag?: true
-    isDeleted?: true
     createdAt?: true
     _all?: true
   }
@@ -5004,9 +4949,6 @@ export namespace Prisma {
   export type TagGroupByOutputType = {
     id: string
     title: string
-    userId: string | null
-    isSystemTag: boolean
-    isDeleted: boolean
     createdAt: Date
     _count: TagCountAggregateOutputType | null
     _min: TagMinAggregateOutputType | null
@@ -5030,11 +4972,7 @@ export namespace Prisma {
   export type TagSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     title?: boolean
-    userId?: boolean
-    isSystemTag?: boolean
-    isDeleted?: boolean
     createdAt?: boolean
-    user?: boolean | Tag$userArgs<ExtArgs>
     excuses?: boolean | Tag$excusesArgs<ExtArgs>
     _count?: boolean | TagCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["tag"]>
@@ -5042,57 +4980,37 @@ export namespace Prisma {
   export type TagSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     title?: boolean
-    userId?: boolean
-    isSystemTag?: boolean
-    isDeleted?: boolean
     createdAt?: boolean
-    user?: boolean | Tag$userArgs<ExtArgs>
   }, ExtArgs["result"]["tag"]>
 
   export type TagSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     title?: boolean
-    userId?: boolean
-    isSystemTag?: boolean
-    isDeleted?: boolean
     createdAt?: boolean
-    user?: boolean | Tag$userArgs<ExtArgs>
   }, ExtArgs["result"]["tag"]>
 
   export type TagSelectScalar = {
     id?: boolean
     title?: boolean
-    userId?: boolean
-    isSystemTag?: boolean
-    isDeleted?: boolean
     createdAt?: boolean
   }
 
-  export type TagOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "userId" | "isSystemTag" | "isDeleted" | "createdAt", ExtArgs["result"]["tag"]>
+  export type TagOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "createdAt", ExtArgs["result"]["tag"]>
   export type TagInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | Tag$userArgs<ExtArgs>
     excuses?: boolean | Tag$excusesArgs<ExtArgs>
     _count?: boolean | TagCountOutputTypeDefaultArgs<ExtArgs>
   }
-  export type TagIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | Tag$userArgs<ExtArgs>
-  }
-  export type TagIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    user?: boolean | Tag$userArgs<ExtArgs>
-  }
+  export type TagIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type TagIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
 
   export type $TagPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Tag"
     objects: {
-      user: Prisma.$UserPayload<ExtArgs> | null
       excuses: Prisma.$ExcuseTagPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
       title: string
-      userId: string | null
-      isSystemTag: boolean
-      isDeleted: boolean
       createdAt: Date
     }, ExtArgs["result"]["tag"]>
     composites: {}
@@ -5488,7 +5406,6 @@ export namespace Prisma {
    */
   export interface Prisma__TagClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    user<T extends Tag$userArgs<ExtArgs> = {}>(args?: Subset<T, Tag$userArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     excuses<T extends Tag$excusesArgs<ExtArgs> = {}>(args?: Subset<T, Tag$excusesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ExcuseTagPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -5521,9 +5438,6 @@ export namespace Prisma {
   interface TagFieldRefs {
     readonly id: FieldRef<"Tag", 'String'>
     readonly title: FieldRef<"Tag", 'String'>
-    readonly userId: FieldRef<"Tag", 'String'>
-    readonly isSystemTag: FieldRef<"Tag", 'Boolean'>
-    readonly isDeleted: FieldRef<"Tag", 'Boolean'>
     readonly createdAt: FieldRef<"Tag", 'DateTime'>
   }
     
@@ -5774,10 +5688,6 @@ export namespace Prisma {
      */
     data: TagCreateManyInput | TagCreateManyInput[]
     skipDuplicates?: boolean
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: TagIncludeCreateManyAndReturn<ExtArgs> | null
   }
 
   /**
@@ -5848,10 +5758,6 @@ export namespace Prisma {
      * Limit how many Tags to update.
      */
     limit?: number
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: TagIncludeUpdateManyAndReturn<ExtArgs> | null
   }
 
   /**
@@ -5918,25 +5824,6 @@ export namespace Prisma {
      * Limit how many Tags to delete.
      */
     limit?: number
-  }
-
-  /**
-   * Tag.user
-   */
-  export type Tag$userArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the User
-     */
-    select?: UserSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the User
-     */
-    omit?: UserOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: UserInclude<ExtArgs> | null
-    where?: UserWhereInput
   }
 
   /**
@@ -8130,9 +8017,6 @@ export namespace Prisma {
   export const TagScalarFieldEnum: {
     id: 'id',
     title: 'title',
-    userId: 'userId',
-    isSystemTag: 'isSystemTag',
-    isDeleted: 'isDeleted',
     createdAt: 'createdAt'
   };
 
@@ -8252,7 +8136,6 @@ export namespace Prisma {
     isDeleted?: BoolFilter<"User"> | boolean
     chats?: ChatListRelationFilter
     likes?: LikeListRelationFilter
-    tags?: TagListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -8265,7 +8148,6 @@ export namespace Prisma {
     isDeleted?: SortOrder
     chats?: ChatOrderByRelationAggregateInput
     likes?: LikeOrderByRelationAggregateInput
-    tags?: TagOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -8281,7 +8163,6 @@ export namespace Prisma {
     isDeleted?: BoolFilter<"User"> | boolean
     chats?: ChatListRelationFilter
     likes?: LikeListRelationFilter
-    tags?: TagListRelationFilter
   }, "id" | "uid" | "email">
 
   export type UserOrderByWithAggregationInput = {
@@ -8450,22 +8331,14 @@ export namespace Prisma {
     NOT?: TagWhereInput | TagWhereInput[]
     id?: StringFilter<"Tag"> | string
     title?: StringFilter<"Tag"> | string
-    userId?: StringNullableFilter<"Tag"> | string | null
-    isSystemTag?: BoolFilter<"Tag"> | boolean
-    isDeleted?: BoolFilter<"Tag"> | boolean
     createdAt?: DateTimeFilter<"Tag"> | Date | string
-    user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     excuses?: ExcuseTagListRelationFilter
   }
 
   export type TagOrderByWithRelationInput = {
     id?: SortOrder
     title?: SortOrder
-    userId?: SortOrderInput | SortOrder
-    isSystemTag?: SortOrder
-    isDeleted?: SortOrder
     createdAt?: SortOrder
-    user?: UserOrderByWithRelationInput
     excuses?: ExcuseTagOrderByRelationAggregateInput
   }
 
@@ -8475,20 +8348,13 @@ export namespace Prisma {
     AND?: TagWhereInput | TagWhereInput[]
     OR?: TagWhereInput[]
     NOT?: TagWhereInput | TagWhereInput[]
-    userId?: StringNullableFilter<"Tag"> | string | null
-    isSystemTag?: BoolFilter<"Tag"> | boolean
-    isDeleted?: BoolFilter<"Tag"> | boolean
     createdAt?: DateTimeFilter<"Tag"> | Date | string
-    user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     excuses?: ExcuseTagListRelationFilter
   }, "id" | "title">
 
   export type TagOrderByWithAggregationInput = {
     id?: SortOrder
     title?: SortOrder
-    userId?: SortOrderInput | SortOrder
-    isSystemTag?: SortOrder
-    isDeleted?: SortOrder
     createdAt?: SortOrder
     _count?: TagCountOrderByAggregateInput
     _max?: TagMaxOrderByAggregateInput
@@ -8501,9 +8367,6 @@ export namespace Prisma {
     NOT?: TagScalarWhereWithAggregatesInput | TagScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"Tag"> | string
     title?: StringWithAggregatesFilter<"Tag"> | string
-    userId?: StringNullableWithAggregatesFilter<"Tag"> | string | null
-    isSystemTag?: BoolWithAggregatesFilter<"Tag"> | boolean
-    isDeleted?: BoolWithAggregatesFilter<"Tag"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"Tag"> | Date | string
   }
 
@@ -8620,7 +8483,6 @@ export namespace Prisma {
     isDeleted?: boolean
     chats?: ChatCreateNestedManyWithoutUserInput
     likes?: LikeCreateNestedManyWithoutUserInput
-    tags?: TagCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -8633,7 +8495,6 @@ export namespace Prisma {
     isDeleted?: boolean
     chats?: ChatUncheckedCreateNestedManyWithoutUserInput
     likes?: LikeUncheckedCreateNestedManyWithoutUserInput
-    tags?: TagUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserUpdateInput = {
@@ -8646,7 +8507,6 @@ export namespace Prisma {
     isDeleted?: BoolFieldUpdateOperationsInput | boolean
     chats?: ChatUpdateManyWithoutUserNestedInput
     likes?: LikeUpdateManyWithoutUserNestedInput
-    tags?: TagUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -8659,7 +8519,6 @@ export namespace Prisma {
     isDeleted?: BoolFieldUpdateOperationsInput | boolean
     chats?: ChatUncheckedUpdateManyWithoutUserNestedInput
     likes?: LikeUncheckedUpdateManyWithoutUserNestedInput
-    tags?: TagUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -8838,19 +8697,13 @@ export namespace Prisma {
   export type TagCreateInput = {
     id?: string
     title: string
-    isSystemTag?: boolean
-    isDeleted?: boolean
     createdAt?: Date | string
-    user?: UserCreateNestedOneWithoutTagsInput
     excuses?: ExcuseTagCreateNestedManyWithoutTagInput
   }
 
   export type TagUncheckedCreateInput = {
     id?: string
     title: string
-    userId?: string | null
-    isSystemTag?: boolean
-    isDeleted?: boolean
     createdAt?: Date | string
     excuses?: ExcuseTagUncheckedCreateNestedManyWithoutTagInput
   }
@@ -8858,19 +8711,13 @@ export namespace Prisma {
   export type TagUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
-    isSystemTag?: BoolFieldUpdateOperationsInput | boolean
-    isDeleted?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    user?: UserUpdateOneWithoutTagsNestedInput
     excuses?: ExcuseTagUpdateManyWithoutTagNestedInput
   }
 
   export type TagUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
-    userId?: NullableStringFieldUpdateOperationsInput | string | null
-    isSystemTag?: BoolFieldUpdateOperationsInput | boolean
-    isDeleted?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     excuses?: ExcuseTagUncheckedUpdateManyWithoutTagNestedInput
   }
@@ -8878,26 +8725,18 @@ export namespace Prisma {
   export type TagCreateManyInput = {
     id?: string
     title: string
-    userId?: string | null
-    isSystemTag?: boolean
-    isDeleted?: boolean
     createdAt?: Date | string
   }
 
   export type TagUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
-    isSystemTag?: BoolFieldUpdateOperationsInput | boolean
-    isDeleted?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type TagUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
-    userId?: NullableStringFieldUpdateOperationsInput | string | null
-    isSystemTag?: BoolFieldUpdateOperationsInput | boolean
-    isDeleted?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -9047,12 +8886,6 @@ export namespace Prisma {
     none?: LikeWhereInput
   }
 
-  export type TagListRelationFilter = {
-    every?: TagWhereInput
-    some?: TagWhereInput
-    none?: TagWhereInput
-  }
-
   export type SortOrderInput = {
     sort: SortOrder
     nulls?: NullsOrder
@@ -9063,10 +8896,6 @@ export namespace Prisma {
   }
 
   export type LikeOrderByRelationAggregateInput = {
-    _count?: SortOrder
-  }
-
-  export type TagOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -9258,35 +9087,21 @@ export namespace Prisma {
     _max?: NestedBoolNullableFilter<$PrismaModel>
   }
 
-  export type UserNullableScalarRelationFilter = {
-    is?: UserWhereInput | null
-    isNot?: UserWhereInput | null
-  }
-
   export type TagCountOrderByAggregateInput = {
     id?: SortOrder
     title?: SortOrder
-    userId?: SortOrder
-    isSystemTag?: SortOrder
-    isDeleted?: SortOrder
     createdAt?: SortOrder
   }
 
   export type TagMaxOrderByAggregateInput = {
     id?: SortOrder
     title?: SortOrder
-    userId?: SortOrder
-    isSystemTag?: SortOrder
-    isDeleted?: SortOrder
     createdAt?: SortOrder
   }
 
   export type TagMinOrderByAggregateInput = {
     id?: SortOrder
     title?: SortOrder
-    userId?: SortOrder
-    isSystemTag?: SortOrder
-    isDeleted?: SortOrder
     createdAt?: SortOrder
   }
 
@@ -9363,13 +9178,6 @@ export namespace Prisma {
     connect?: LikeWhereUniqueInput | LikeWhereUniqueInput[]
   }
 
-  export type TagCreateNestedManyWithoutUserInput = {
-    create?: XOR<TagCreateWithoutUserInput, TagUncheckedCreateWithoutUserInput> | TagCreateWithoutUserInput[] | TagUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: TagCreateOrConnectWithoutUserInput | TagCreateOrConnectWithoutUserInput[]
-    createMany?: TagCreateManyUserInputEnvelope
-    connect?: TagWhereUniqueInput | TagWhereUniqueInput[]
-  }
-
   export type ChatUncheckedCreateNestedManyWithoutUserInput = {
     create?: XOR<ChatCreateWithoutUserInput, ChatUncheckedCreateWithoutUserInput> | ChatCreateWithoutUserInput[] | ChatUncheckedCreateWithoutUserInput[]
     connectOrCreate?: ChatCreateOrConnectWithoutUserInput | ChatCreateOrConnectWithoutUserInput[]
@@ -9382,13 +9190,6 @@ export namespace Prisma {
     connectOrCreate?: LikeCreateOrConnectWithoutUserInput | LikeCreateOrConnectWithoutUserInput[]
     createMany?: LikeCreateManyUserInputEnvelope
     connect?: LikeWhereUniqueInput | LikeWhereUniqueInput[]
-  }
-
-  export type TagUncheckedCreateNestedManyWithoutUserInput = {
-    create?: XOR<TagCreateWithoutUserInput, TagUncheckedCreateWithoutUserInput> | TagCreateWithoutUserInput[] | TagUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: TagCreateOrConnectWithoutUserInput | TagCreateOrConnectWithoutUserInput[]
-    createMany?: TagCreateManyUserInputEnvelope
-    connect?: TagWhereUniqueInput | TagWhereUniqueInput[]
   }
 
   export type StringFieldUpdateOperationsInput = {
@@ -9435,20 +9236,6 @@ export namespace Prisma {
     deleteMany?: LikeScalarWhereInput | LikeScalarWhereInput[]
   }
 
-  export type TagUpdateManyWithoutUserNestedInput = {
-    create?: XOR<TagCreateWithoutUserInput, TagUncheckedCreateWithoutUserInput> | TagCreateWithoutUserInput[] | TagUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: TagCreateOrConnectWithoutUserInput | TagCreateOrConnectWithoutUserInput[]
-    upsert?: TagUpsertWithWhereUniqueWithoutUserInput | TagUpsertWithWhereUniqueWithoutUserInput[]
-    createMany?: TagCreateManyUserInputEnvelope
-    set?: TagWhereUniqueInput | TagWhereUniqueInput[]
-    disconnect?: TagWhereUniqueInput | TagWhereUniqueInput[]
-    delete?: TagWhereUniqueInput | TagWhereUniqueInput[]
-    connect?: TagWhereUniqueInput | TagWhereUniqueInput[]
-    update?: TagUpdateWithWhereUniqueWithoutUserInput | TagUpdateWithWhereUniqueWithoutUserInput[]
-    updateMany?: TagUpdateManyWithWhereWithoutUserInput | TagUpdateManyWithWhereWithoutUserInput[]
-    deleteMany?: TagScalarWhereInput | TagScalarWhereInput[]
-  }
-
   export type ChatUncheckedUpdateManyWithoutUserNestedInput = {
     create?: XOR<ChatCreateWithoutUserInput, ChatUncheckedCreateWithoutUserInput> | ChatCreateWithoutUserInput[] | ChatUncheckedCreateWithoutUserInput[]
     connectOrCreate?: ChatCreateOrConnectWithoutUserInput | ChatCreateOrConnectWithoutUserInput[]
@@ -9475,20 +9262,6 @@ export namespace Prisma {
     update?: LikeUpdateWithWhereUniqueWithoutUserInput | LikeUpdateWithWhereUniqueWithoutUserInput[]
     updateMany?: LikeUpdateManyWithWhereWithoutUserInput | LikeUpdateManyWithWhereWithoutUserInput[]
     deleteMany?: LikeScalarWhereInput | LikeScalarWhereInput[]
-  }
-
-  export type TagUncheckedUpdateManyWithoutUserNestedInput = {
-    create?: XOR<TagCreateWithoutUserInput, TagUncheckedCreateWithoutUserInput> | TagCreateWithoutUserInput[] | TagUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: TagCreateOrConnectWithoutUserInput | TagCreateOrConnectWithoutUserInput[]
-    upsert?: TagUpsertWithWhereUniqueWithoutUserInput | TagUpsertWithWhereUniqueWithoutUserInput[]
-    createMany?: TagCreateManyUserInputEnvelope
-    set?: TagWhereUniqueInput | TagWhereUniqueInput[]
-    disconnect?: TagWhereUniqueInput | TagWhereUniqueInput[]
-    delete?: TagWhereUniqueInput | TagWhereUniqueInput[]
-    connect?: TagWhereUniqueInput | TagWhereUniqueInput[]
-    update?: TagUpdateWithWhereUniqueWithoutUserInput | TagUpdateWithWhereUniqueWithoutUserInput[]
-    updateMany?: TagUpdateManyWithWhereWithoutUserInput | TagUpdateManyWithWhereWithoutUserInput[]
-    deleteMany?: TagScalarWhereInput | TagScalarWhereInput[]
   }
 
   export type UserCreateNestedOneWithoutChatsInput = {
@@ -9649,12 +9422,6 @@ export namespace Prisma {
     deleteMany?: LikeScalarWhereInput | LikeScalarWhereInput[]
   }
 
-  export type UserCreateNestedOneWithoutTagsInput = {
-    create?: XOR<UserCreateWithoutTagsInput, UserUncheckedCreateWithoutTagsInput>
-    connectOrCreate?: UserCreateOrConnectWithoutTagsInput
-    connect?: UserWhereUniqueInput
-  }
-
   export type ExcuseTagCreateNestedManyWithoutTagInput = {
     create?: XOR<ExcuseTagCreateWithoutTagInput, ExcuseTagUncheckedCreateWithoutTagInput> | ExcuseTagCreateWithoutTagInput[] | ExcuseTagUncheckedCreateWithoutTagInput[]
     connectOrCreate?: ExcuseTagCreateOrConnectWithoutTagInput | ExcuseTagCreateOrConnectWithoutTagInput[]
@@ -9667,16 +9434,6 @@ export namespace Prisma {
     connectOrCreate?: ExcuseTagCreateOrConnectWithoutTagInput | ExcuseTagCreateOrConnectWithoutTagInput[]
     createMany?: ExcuseTagCreateManyTagInputEnvelope
     connect?: ExcuseTagWhereUniqueInput | ExcuseTagWhereUniqueInput[]
-  }
-
-  export type UserUpdateOneWithoutTagsNestedInput = {
-    create?: XOR<UserCreateWithoutTagsInput, UserUncheckedCreateWithoutTagsInput>
-    connectOrCreate?: UserCreateOrConnectWithoutTagsInput
-    upsert?: UserUpsertWithoutTagsInput
-    disconnect?: UserWhereInput | boolean
-    delete?: UserWhereInput | boolean
-    connect?: UserWhereUniqueInput
-    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutTagsInput, UserUpdateWithoutTagsInput>, UserUncheckedUpdateWithoutTagsInput>
   }
 
   export type ExcuseTagUpdateManyWithoutTagNestedInput = {
@@ -9950,34 +9707,6 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
-  export type TagCreateWithoutUserInput = {
-    id?: string
-    title: string
-    isSystemTag?: boolean
-    isDeleted?: boolean
-    createdAt?: Date | string
-    excuses?: ExcuseTagCreateNestedManyWithoutTagInput
-  }
-
-  export type TagUncheckedCreateWithoutUserInput = {
-    id?: string
-    title: string
-    isSystemTag?: boolean
-    isDeleted?: boolean
-    createdAt?: Date | string
-    excuses?: ExcuseTagUncheckedCreateNestedManyWithoutTagInput
-  }
-
-  export type TagCreateOrConnectWithoutUserInput = {
-    where: TagWhereUniqueInput
-    create: XOR<TagCreateWithoutUserInput, TagUncheckedCreateWithoutUserInput>
-  }
-
-  export type TagCreateManyUserInputEnvelope = {
-    data: TagCreateManyUserInput | TagCreateManyUserInput[]
-    skipDuplicates?: boolean
-  }
-
   export type ChatUpsertWithWhereUniqueWithoutUserInput = {
     where: ChatWhereUniqueInput
     update: XOR<ChatUpdateWithoutUserInput, ChatUncheckedUpdateWithoutUserInput>
@@ -10033,34 +9762,6 @@ export namespace Prisma {
     isDeleted?: BoolFilter<"Like"> | boolean
   }
 
-  export type TagUpsertWithWhereUniqueWithoutUserInput = {
-    where: TagWhereUniqueInput
-    update: XOR<TagUpdateWithoutUserInput, TagUncheckedUpdateWithoutUserInput>
-    create: XOR<TagCreateWithoutUserInput, TagUncheckedCreateWithoutUserInput>
-  }
-
-  export type TagUpdateWithWhereUniqueWithoutUserInput = {
-    where: TagWhereUniqueInput
-    data: XOR<TagUpdateWithoutUserInput, TagUncheckedUpdateWithoutUserInput>
-  }
-
-  export type TagUpdateManyWithWhereWithoutUserInput = {
-    where: TagScalarWhereInput
-    data: XOR<TagUpdateManyMutationInput, TagUncheckedUpdateManyWithoutUserInput>
-  }
-
-  export type TagScalarWhereInput = {
-    AND?: TagScalarWhereInput | TagScalarWhereInput[]
-    OR?: TagScalarWhereInput[]
-    NOT?: TagScalarWhereInput | TagScalarWhereInput[]
-    id?: StringFilter<"Tag"> | string
-    title?: StringFilter<"Tag"> | string
-    userId?: StringNullableFilter<"Tag"> | string | null
-    isSystemTag?: BoolFilter<"Tag"> | boolean
-    isDeleted?: BoolFilter<"Tag"> | boolean
-    createdAt?: DateTimeFilter<"Tag"> | Date | string
-  }
-
   export type UserCreateWithoutChatsInput = {
     id?: string
     uid: string
@@ -10070,7 +9771,6 @@ export namespace Prisma {
     updatedAt?: Date | string
     isDeleted?: boolean
     likes?: LikeCreateNestedManyWithoutUserInput
-    tags?: TagCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutChatsInput = {
@@ -10082,7 +9782,6 @@ export namespace Prisma {
     updatedAt?: Date | string
     isDeleted?: boolean
     likes?: LikeUncheckedCreateNestedManyWithoutUserInput
-    tags?: TagUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutChatsInput = {
@@ -10142,7 +9841,6 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     isDeleted?: BoolFieldUpdateOperationsInput | boolean
     likes?: LikeUpdateManyWithoutUserNestedInput
-    tags?: TagUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutChatsInput = {
@@ -10154,7 +9852,6 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     isDeleted?: BoolFieldUpdateOperationsInput | boolean
     likes?: LikeUncheckedUpdateManyWithoutUserNestedInput
-    tags?: TagUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type ExcuseUpsertWithWhereUniqueWithoutChatInput = {
@@ -10320,35 +10017,6 @@ export namespace Prisma {
     data: XOR<LikeUpdateManyMutationInput, LikeUncheckedUpdateManyWithoutExcuseInput>
   }
 
-  export type UserCreateWithoutTagsInput = {
-    id?: string
-    uid: string
-    email: string
-    nickname?: string | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    isDeleted?: boolean
-    chats?: ChatCreateNestedManyWithoutUserInput
-    likes?: LikeCreateNestedManyWithoutUserInput
-  }
-
-  export type UserUncheckedCreateWithoutTagsInput = {
-    id?: string
-    uid: string
-    email: string
-    nickname?: string | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    isDeleted?: boolean
-    chats?: ChatUncheckedCreateNestedManyWithoutUserInput
-    likes?: LikeUncheckedCreateNestedManyWithoutUserInput
-  }
-
-  export type UserCreateOrConnectWithoutTagsInput = {
-    where: UserWhereUniqueInput
-    create: XOR<UserCreateWithoutTagsInput, UserUncheckedCreateWithoutTagsInput>
-  }
-
   export type ExcuseTagCreateWithoutTagInput = {
     excuse: ExcuseCreateNestedOneWithoutTagsInput
   }
@@ -10365,41 +10033,6 @@ export namespace Prisma {
   export type ExcuseTagCreateManyTagInputEnvelope = {
     data: ExcuseTagCreateManyTagInput | ExcuseTagCreateManyTagInput[]
     skipDuplicates?: boolean
-  }
-
-  export type UserUpsertWithoutTagsInput = {
-    update: XOR<UserUpdateWithoutTagsInput, UserUncheckedUpdateWithoutTagsInput>
-    create: XOR<UserCreateWithoutTagsInput, UserUncheckedCreateWithoutTagsInput>
-    where?: UserWhereInput
-  }
-
-  export type UserUpdateToOneWithWhereWithoutTagsInput = {
-    where?: UserWhereInput
-    data: XOR<UserUpdateWithoutTagsInput, UserUncheckedUpdateWithoutTagsInput>
-  }
-
-  export type UserUpdateWithoutTagsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    uid?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    nickname?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    isDeleted?: BoolFieldUpdateOperationsInput | boolean
-    chats?: ChatUpdateManyWithoutUserNestedInput
-    likes?: LikeUpdateManyWithoutUserNestedInput
-  }
-
-  export type UserUncheckedUpdateWithoutTagsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    uid?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    nickname?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    isDeleted?: BoolFieldUpdateOperationsInput | boolean
-    chats?: ChatUncheckedUpdateManyWithoutUserNestedInput
-    likes?: LikeUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type ExcuseTagUpsertWithWhereUniqueWithoutTagInput = {
@@ -10448,18 +10081,12 @@ export namespace Prisma {
   export type TagCreateWithoutExcusesInput = {
     id?: string
     title: string
-    isSystemTag?: boolean
-    isDeleted?: boolean
     createdAt?: Date | string
-    user?: UserCreateNestedOneWithoutTagsInput
   }
 
   export type TagUncheckedCreateWithoutExcusesInput = {
     id?: string
     title: string
-    userId?: string | null
-    isSystemTag?: boolean
-    isDeleted?: boolean
     createdAt?: Date | string
   }
 
@@ -10515,18 +10142,12 @@ export namespace Prisma {
   export type TagUpdateWithoutExcusesInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
-    isSystemTag?: BoolFieldUpdateOperationsInput | boolean
-    isDeleted?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    user?: UserUpdateOneWithoutTagsNestedInput
   }
 
   export type TagUncheckedUpdateWithoutExcusesInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: StringFieldUpdateOperationsInput | string
-    userId?: NullableStringFieldUpdateOperationsInput | string | null
-    isSystemTag?: BoolFieldUpdateOperationsInput | boolean
-    isDeleted?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -10539,7 +10160,6 @@ export namespace Prisma {
     updatedAt?: Date | string
     isDeleted?: boolean
     chats?: ChatCreateNestedManyWithoutUserInput
-    tags?: TagCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutLikesInput = {
@@ -10551,7 +10171,6 @@ export namespace Prisma {
     updatedAt?: Date | string
     isDeleted?: boolean
     chats?: ChatUncheckedCreateNestedManyWithoutUserInput
-    tags?: TagUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutLikesInput = {
@@ -10606,7 +10225,6 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     isDeleted?: BoolFieldUpdateOperationsInput | boolean
     chats?: ChatUpdateManyWithoutUserNestedInput
-    tags?: TagUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutLikesInput = {
@@ -10618,7 +10236,6 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     isDeleted?: BoolFieldUpdateOperationsInput | boolean
     chats?: ChatUncheckedUpdateManyWithoutUserNestedInput
-    tags?: TagUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type ExcuseUpsertWithoutLikesInput = {
@@ -10669,14 +10286,6 @@ export namespace Prisma {
     isDeleted?: boolean
   }
 
-  export type TagCreateManyUserInput = {
-    id?: string
-    title: string
-    isSystemTag?: boolean
-    isDeleted?: boolean
-    createdAt?: Date | string
-  }
-
   export type ChatUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     title?: NullableStringFieldUpdateOperationsInput | string | null
@@ -10722,32 +10331,6 @@ export namespace Prisma {
     excuseId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     isDeleted?: BoolFieldUpdateOperationsInput | boolean
-  }
-
-  export type TagUpdateWithoutUserInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    title?: StringFieldUpdateOperationsInput | string
-    isSystemTag?: BoolFieldUpdateOperationsInput | boolean
-    isDeleted?: BoolFieldUpdateOperationsInput | boolean
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    excuses?: ExcuseTagUpdateManyWithoutTagNestedInput
-  }
-
-  export type TagUncheckedUpdateWithoutUserInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    title?: StringFieldUpdateOperationsInput | string
-    isSystemTag?: BoolFieldUpdateOperationsInput | boolean
-    isDeleted?: BoolFieldUpdateOperationsInput | boolean
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    excuses?: ExcuseTagUncheckedUpdateManyWithoutTagNestedInput
-  }
-
-  export type TagUncheckedUpdateManyWithoutUserInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    title?: StringFieldUpdateOperationsInput | string
-    isSystemTag?: BoolFieldUpdateOperationsInput | boolean
-    isDeleted?: BoolFieldUpdateOperationsInput | boolean
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type ExcuseCreateManyChatInput = {
