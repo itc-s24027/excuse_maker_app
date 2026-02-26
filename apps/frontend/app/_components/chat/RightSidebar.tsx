@@ -33,8 +33,8 @@ export default function RightSidebar({
   };
 
   return (
-    <aside className={`${styles.rightSidebar} ${showRightSidebar ? styles.open : ''}`}>
-      {selectedChat && tags.length > 0 ? (
+    <aside className={`${styles.rightSidebar} ${showRightSidebar ? styles.show : ''}`}>
+      {tags.length > 0 ? (
         <div>
           <h4
             style={{

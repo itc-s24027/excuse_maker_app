@@ -1,0 +1,107 @@
+.answerSection {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  margin-bottom: 16px;
+}
+
+.answerHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.answerTitle {
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: #665440;
+  margin: 0;
+}
+
+.answerDisplayRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 16px 0;
+  flex: 1;
+  min-height: 0;
+}
+
+.answerBox {
+  flex: 1;
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  font-size: 25px;
+  color: #665440;
+  border: 1px solid #dfc9ab;
+  line-height: 1.8;
+  position: relative;
+  height: 280px;
+  max-height: 280px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  overflow: auto;
+  word-break: break-word;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.answerBox.success {
+  background: var(--success-bg-light);
+  border: 2px solid var(--success-color-light);
+}
+
+.answerBox.deleted {
+  opacity: 0.5;
+  border: 1px solid #ccc;
+}
+
+.answerBoxContent {
+  opacity: 1;
+  flex: 1;
+}
+
+.answerBoxContent.deleted {
+  opacity: 0.3;
+}
+
+.deletedLabel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 16px;
+  font-weight: 600;
+  color: #999;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 8px 16px;
+  border-radius: 8px;
+}
+
+.answerPagination {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.answerPageNumber {
+  font-size: 18px;
+  color: #9a6044;
+  font-weight: 600;
+}
+
+.answerButtonRow {
+  display: flex;
+  gap: 12px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+

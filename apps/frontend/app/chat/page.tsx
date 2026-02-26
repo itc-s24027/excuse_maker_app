@@ -1,7 +1,5 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import LogoutButton from "@/app/_components/GoogleButton/logout";
 import SaveExcuseModal from "@/app/_components/chat/SaveExcuseModal";
 import ChatSidebar from "@/app/_components/chat/ChatSidebar";
 import AnswerDisplay from "@/app/_components/chat/AnswerDisplay";
@@ -13,6 +11,7 @@ import PopupNotification from "@/app/_components/chat/PopupNotification";
 import RightSidebar from "@/app/_components/chat/RightSidebar";
 import SuccessHistory from "@/app/_components/chat/SuccessHistory";
 import HiddenAnswers from "@/app/_components/chat/HiddenAnswers";
+import HistoryToggleButtons from "@/app/_components/chat/HistoryToggleButtons";
 import {
   fetchChats,
   fetchChatDetail,
@@ -31,7 +30,6 @@ import {
 import { fetchTags, Tag } from "@/app/api/tag";
 import styles from "./page.module.css";
 export default function ChatPage() {
-  const router = useRouter();
   const [chats, setChats] = useState<ChatSummary[]>([]);
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<Record<string, Message[]>>({});
@@ -453,7 +451,6 @@ export default function ChatPage() {
   const showNextAnswer = () => {
     if (!currentAnswerGroup || validAnswers.length <= 1) return;
     const currentIdx = currentAnswerGroup.currentIndex;
-    let found = false;
     for (let i = currentIdx + 1; i < currentAnswerGroup.answers.length; i++) {
       if (!currentAnswerGroup.answers[i].deleted) {
         setChatAnswerHistory((prev) => {
@@ -464,7 +461,6 @@ export default function ChatPage() {
           }
           return { ...prev, [selectedChat!]: history };
         });
-        found = true;
         return;
       }
     }
@@ -530,16 +526,17 @@ export default function ChatPage() {
     }
   };
   // タイトル更新
-  const handleUpdateChatTitle = async () => {
-    if (!editTitleChatId || !editTitleValue.trim()) {
+  const handleUpdateChatTitle = async (newTitle?: string) => {
+    const titleToUpdate = newTitle || editTitleValue;
+    if (!editTitleChatId || !titleToUpdate.trim()) {
       showAlert("タイトルを入力してください");
       return;
     }
     try {
-      await updateChatTitle(editTitleChatId, editTitleValue.trim());
+      await updateChatTitle(editTitleChatId, titleToUpdate.trim());
       setChats((prevChats) =>
         prevChats.map((chat) =>
-          chat.id === editTitleChatId ? { ...chat, title: editTitleValue.trim() } : chat
+          chat.id === editTitleChatId ? { ...chat, title: titleToUpdate.trim() } : chat
         )
       );
       setEditTitleChatId(null);
@@ -549,12 +546,6 @@ export default function ChatPage() {
     } catch (error) {
       console.error("タイトル更新エラー:", error);
       showAlert("タイトル更新に失敗しました");
-    }
-  };
-  // タグクリック
-  const handleTagClick = (tagId?: string) => {
-    if (tagId) {
-      router.push(`/tag-ranking/${tagId}`);
     }
   };
   return (
@@ -641,24 +632,16 @@ export default function ChatPage() {
               onSendPrompt={sendPrompt}
             />
 
-            {/* 成功一覧ボタン */}
-            <div className={styles.historyToggleContainer}>
-              <button
-                onClick={() => setShowSuccessHistory(!showSuccessHistory)}
-                disabled={answerHistory.filter(g => g.answers.some(a => a.success && !a.deleted)).length === 0}
-                className={`${styles.historyToggleButton} ${answerHistory.filter(g => g.answers.some(a => a.success && !a.deleted)).length > 0 ? styles.success : ''}`}
-              >
-                成功一覧
-              </button>
-              {/* 非表示を見るボタン */}
-              <button
-                onClick={toggleShowHiddenAnswers}
-                disabled={!currentAnswerGroup || !currentAnswerGroup.answers.some(a => a.deleted)}
-                className={`${styles.historyToggleButton} ${!currentAnswerGroup || !currentAnswerGroup.answers.some(a => a.deleted) ? '' : styles.hidden}`}
-              >
-                {showHiddenAnswers[selectedChat!] ? "非表示一覧" : "非表示一覧"}
-              </button>
-            </div>
+            {/* 成功一覧・非表示一覧ボタン */}
+            <HistoryToggleButtons
+              answerHistory={answerHistory}
+              currentAnswerGroup={currentAnswerGroup}
+              showSuccessHistory={showSuccessHistory}
+              showHiddenAnswers={showHiddenAnswers}
+              selectedChat={selectedChat}
+              onToggleSuccessHistory={() => setShowSuccessHistory(!showSuccessHistory)}
+              onToggleHiddenAnswers={toggleShowHiddenAnswers}
+            />
 
             {/* 成功履歴 */}
             {showSuccessHistory && selectedChat && (
@@ -745,8 +728,7 @@ export default function ChatPage() {
           setEditTitleValue("");
         }}
         onSubmit={(newTitle) => {
-          setEditTitleValue(newTitle);
-          handleUpdateChatTitle();
+          handleUpdateChatTitle(newTitle);
         }}
       />
 

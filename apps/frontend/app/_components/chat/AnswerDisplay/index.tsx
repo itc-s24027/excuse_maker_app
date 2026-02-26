@@ -7,7 +7,7 @@ import {
   ActionButtonHide,
   ActionButton,
 } from "@/app/_components/buttons";
-import styles from "@/app/chat/page.module.css";
+import styles from "./AnswerDisplay.module.css";
 
 interface Answer {
   text: string;

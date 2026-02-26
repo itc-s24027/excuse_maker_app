@@ -2,7 +2,7 @@
 
 import React from "react";
 import { SendButton } from "@/app/_components/buttons";
-import styles from "@/app/chat/page.module.css";
+import styles from "./PromptSection.module.css";
 
 interface PromptSectionProps {
   prompt: string;
