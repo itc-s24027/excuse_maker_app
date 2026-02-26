@@ -172,12 +172,31 @@ export async function saveExcuse({
 
     // タグを関連付け（複数）
     if (tagIds && tagIds.length > 0) {
-      await tx.excuseTag.createMany({
-        data: tagIds.map((tagId) => ({
+      // 既存のタグ関連を取得
+      const existingTags = await tx.excuseTag.findMany({
+        where: {
           excuseId: excuse.id,
-          tagId,
-        })),
+        },
+        select: {
+          tagId: true,
+        },
       });
+
+      const existingTagIds = new Set(existingTags.map(t => t.tagId));
+
+      // 新しいタグのみをフィルター
+      const newTagIds = tagIds.filter(tagId => !existingTagIds.has(tagId));
+
+      // 新しいタグのみを追加（skipDuplicatesで重複を自動スキップ）
+      if (newTagIds.length > 0) {
+        await tx.excuseTag.createMany({
+          data: newTagIds.map((tagId) => ({
+            excuseId: excuse.id,
+            tagId,
+          })),
+          skipDuplicates: true, // 重複する場合はスキップ
+        });
+      }
     }
 
     return { excuse };
