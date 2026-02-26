@@ -25,7 +25,7 @@ interface SuccessHistoryProps {
   showHiddenAnswers: Record<string, boolean>;
   onSelectGroup: (groupIdx: number) => void;
   onToggleHiddenAnswers: () => void;
-  onSaveExcuse?: (text: string) => void;
+  onSaveExcuse?: (text: string, excuseId: string) => void;
   onCancelSuccess?: (groupIdx: number, answerIdx: number) => void;
 }
 
@@ -85,7 +85,7 @@ export default function SuccessHistory({
                     onClick={(e) => {
                       e.stopPropagation();
                       if (onSaveExcuse) {
-                        onSaveExcuse(successAnswer.text);
+                        onSaveExcuse(successAnswer.text, successAnswer.excuseId);
                       }
                     }}
                     className={styles.historySaveButton}

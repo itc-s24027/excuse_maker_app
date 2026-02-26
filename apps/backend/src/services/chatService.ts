@@ -145,28 +145,30 @@ export async function deleteChat({ chatId, userUid }: { chatId: string; userUid:
 
 /**
  * 言い訳を保存（複数タグ付き）
+ * 既存の言い訳にタグを関連付ける
  */
 export async function saveExcuse({
   chatId,
-  excuseText,
-  situation,
+  excuseId,
   tagIds,
 }: {
   chatId: string;
-  excuseText: string;
-  situation: string;
+  excuseId: string;
   tagIds: string[];
 }) {
   return prisma.$transaction(async (tx) => {
-    // 言い訳を作成
-    const excuse = await tx.excuse.create({
-      data: {
-        chatId,
-        excuseText,
-        situation,
-        success: true,
-      },
+    // 言い訳が存在するか確認
+    const excuse = await tx.excuse.findUnique({
+      where: { id: excuseId },
     });
+
+    if (!excuse) {
+      throw new Error("Excuse not found");
+    }
+
+    if (excuse.chatId !== chatId) {
+      throw new Error("Excuse does not belong to this chat");
+    }
 
     // タグを関連付け（複数）
     if (tagIds && tagIds.length > 0) {

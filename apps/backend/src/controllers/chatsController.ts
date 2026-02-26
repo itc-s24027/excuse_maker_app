@@ -127,21 +127,20 @@ export async function deleteChat(req: Request, res: Response) {
 // 言い訳を保存（タグ付き）
 export async function saveExcuse(req: Request, res: Response) {
     try {
-        const { excuseText, situation, tagIds } = req.body;
+        const { excuseId, tagIds } = req.body;
         const chatId = req.params.chatId;
 
-        if (!excuseText || !chatId) {
-            return res.status(400).json({ error: "言い訳とチャットIDが必須です" });
+        if (!excuseId || !chatId) {
+            return res.status(400).json({ error: "言い訳IDとチャットIDが必須です" });
         }
 
         const result = await chatService.saveExcuse({
             chatId,
-            excuseText,
-            situation: situation ?? "",
+            excuseId,
             tagIds: Array.isArray(tagIds) ? tagIds : [],
         });
 
-        return res.status(201).json(result);
+        return res.status(200).json(result);
     } catch (err: any) {
         console.error("saveExcuse error:", err);
         return res.status(500).json({ error: "言い訳の保存に失敗しました", details: err?.message ?? String(err) });

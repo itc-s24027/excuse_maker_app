@@ -14,7 +14,7 @@ interface SaveExcuseModalProps {
   isOpen: boolean;
   excuseText: string;
   onClose: () => void;
-  onSave: (selectedTags: Tag[]) => void;
+  onSave: (selectedTags: Tag[], excuseText: string) => void;
   availableTags: Tag[];
   onTagsUpdated?: () => void;
 }
@@ -54,7 +54,7 @@ export default function SaveExcuseModal({
 
   // 保存処理
   const handleSave = () => {
-    onSave(selectedTags);
+    onSave(selectedTags, excuseText);
   };
 
   if (!isOpen) return null;

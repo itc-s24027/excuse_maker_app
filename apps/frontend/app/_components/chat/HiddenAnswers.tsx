@@ -41,7 +41,10 @@ export default function HiddenAnswers({
         {answerHistory.map((group, idx) => {
           const hiddenAnswers = group.answers.filter((a) => a.deleted);
           return hiddenAnswers.length > 0
-            ? hiddenAnswers.map((hiddenAnswer, ansIdx) => (
+            ? hiddenAnswers.map((hiddenAnswer, ansIdx) => {
+                // 元のgroup.answers内での正確なインデックスを取得
+                const actualAnswerIndex = group.answers.indexOf(hiddenAnswer);
+                return (
                 <div
                   key={`${idx}-${ansIdx}`}
                   onClick={() => onSelectGroup(idx)}
@@ -56,7 +59,7 @@ export default function HiddenAnswers({
                     onClick={(e) => {
                       e.stopPropagation();
                       if (onCancelHide) {
-                        onCancelHide(idx, ansIdx);
+                        onCancelHide(idx, actualAnswerIndex);
                       }
                     }}
                     className={styles.historyCardCloseButton}
@@ -70,7 +73,8 @@ export default function HiddenAnswers({
                     <strong></strong> {hiddenAnswer.text.substring(0, 80)}
                   </div>
                 </div>
-              ))
+                );
+              })
             : null;
         })}
       </div>

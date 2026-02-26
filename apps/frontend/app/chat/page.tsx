@@ -157,18 +157,35 @@ export default function ChatPage() {
     handleFetchTags();
   }, []);
   // 言い訳保存
-  const handleSaveExcuse = async (selectedTags: Tag[]) => {
+  const handleSaveExcuse = async (selectedTags: Tag[], excuseText: string) => {
     try {
-      if (!selectedChat || !currentAnswer) {
-        showAlert("チャットまたは言い訳が選択されていません");
+      if (!selectedChat) {
+        showAlert("チャットが選択されていません");
         return;
       }
+      if (!excuseText) {
+        showAlert("言い訳が選択されていません");
+        return;
+      }
+
+      // 成功一覧から保存する場合のexcuseId、または currentAnswer から取得
+      const tempExcuseId = (window as any).__tempExcuseId;
+      const excuseId = tempExcuseId || currentAnswer?.excuseId;
+
+      if (!excuseId) {
+        showAlert("言い訳が見つかりません");
+        return;
+      }
+
       const tagIds = selectedTags
         .map((tag) => tag.id)
         .filter((id): id is string => id !== undefined && id !== null);
       console.log("保存するタグID:", tagIds);
-      await saveExcuse(selectedChat, currentAnswer.text, prompt, tagIds);
+      await saveExcuse(selectedChat, excuseId, tagIds);
       setShowSaveModal(false);
+      setLastExcuseText("");
+      // 臨時保存を削除
+      (window as any).__tempExcuseId = undefined;
       showAlert("言い訳を保存しました！");
       await handleFetchTags();
     } catch (err) {
@@ -431,7 +448,6 @@ export default function ChatPage() {
   const showPreviousAnswer = () => {
     if (!currentAnswerGroup || validAnswers.length <= 1) return;
     const currentIdx = currentAnswerGroup.currentIndex;
-    let found = false;
     for (let i = currentIdx - 1; i >= 0; i--) {
       if (!currentAnswerGroup.answers[i].deleted) {
         setChatAnswerHistory((prev) => {
@@ -442,7 +458,6 @@ export default function ChatPage() {
           }
           return { ...prev, [selectedChat!]: history };
         });
-        found = true;
         return;
       }
     }
@@ -654,8 +669,10 @@ export default function ChatPage() {
                   setCurrentGroupIndex((prev) => ({ ...prev, [selectedChat]: idx }))
                 }
                 onToggleHiddenAnswers={toggleShowHiddenAnswers}
-                onSaveExcuse={(text) => {
+                onSaveExcuse={(text, excuseId) => {
                   setLastExcuseText(text);
+                  // excuseIdを一時的に保存（handleSaveExcuseで使用）
+                  (window as any).__tempExcuseId = excuseId;
                   setShowSaveModal(true);
                 }}
                 onCancelSuccess={(groupIdx, answerIdx) => {

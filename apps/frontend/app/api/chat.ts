@@ -320,8 +320,7 @@ export const toggleExcuseVisibility = async (
  */
 export const saveExcuse = async (
   chatId: string,
-  excuseText: string,
-  situation: string,
+  excuseId: string,
   tagIds: string[]
 ): Promise<void> => {
   if (!API_URL) throw new Error("API URLが未設定です");
@@ -332,8 +331,7 @@ export const saveExcuse = async (
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      excuseText,
-      situation,
+      excuseId,
       tagIds,
     }),
   });
