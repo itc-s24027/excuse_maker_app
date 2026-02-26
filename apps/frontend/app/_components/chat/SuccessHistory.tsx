@@ -55,7 +55,10 @@ export default function SuccessHistory({
             (a) => a.success && !a.deleted
           );
           return successAnswers.length > 0
-            ? successAnswers.map((successAnswer, ansIdx) => (
+            ? successAnswers.map((successAnswer, ansIdx) => {
+                // 元のgroup.answers内での正確なインデックスを取得
+                const actualAnswerIndex = group.answers.indexOf(successAnswer);
+                return (
                 <div
                   key={`${idx}-${ansIdx}`}
                   onClick={() => onSelectGroup(idx)}
@@ -65,7 +68,7 @@ export default function SuccessHistory({
                     onClick={(e) => {
                       e.stopPropagation();
                       if (onCancelSuccess) {
-                        onCancelSuccess(idx, ansIdx);
+                        onCancelSuccess(idx, actualAnswerIndex);
                       }
                     }}
                     className={styles.historyCardCloseButton}
@@ -94,7 +97,8 @@ export default function SuccessHistory({
                     />
                   </button>
                 </div>
-              ))
+                );
+              })
             : null;
         })}
       </div>
