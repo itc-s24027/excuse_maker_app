@@ -9,6 +9,8 @@
 ユーザは生成された言い訳を「成功」や「非表示」として管理でき、タグごとのランキングも確認できます。<br>
 制作理由：AIを取り入れて、エンタメ性のあるアプリを作りたかったからです。
 
+[アプリを見る👀](https://excuse-maker-app-frontend-rust.vercel.app/)
+
 ## スクリーンショット
 <details>
 <summary>使い方</summary>
