@@ -1,21 +1,10 @@
-// フロントからのリクエストをバックエンドのAPIにプロキシする
-import {Router} from "express";
+// プロキシは削除しました。
+// フロントエンドから直接 /api/gemini-test にアクセスしてください。
+// 実装は routes/gemini/initialization.mock.ts を参照してください。
+
+import { Router } from "express";
 
 const router = Router();
-const API_URL = process.env.API_URL;
 
-router.get('/gemini-test', async (req, res) => {
-    try {
-        const response = await fetch(`${API_URL}/gemini-test`);
-        if (!response.ok) {
-            throw new Error('バックエンドAPIの呼び出し失敗');
-        }
-        const data = await response.json();
-        res.status(200).json(data);
-    } catch (error) {
-        console.error('APIプロキシエラー', error);
-        res.status(500).json({ error: 'API呼び出し失敗' });
-    }
-});
-
+// このファイルは不要になったため、空のルーターを返します
 export default router;

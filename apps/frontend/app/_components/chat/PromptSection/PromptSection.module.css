@@ -1,0 +1,50 @@
+.promptSection {
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.promptLabel {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-top: 20px;
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: #665440;
+}
+
+.promptIcon {
+  width: 32px;
+  height: 32px;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+.promptTextarea {
+  width: 100%;
+  height: 140px;
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 20px;
+  border: 2px solid #c3af96;
+  font-family: var(--font-noto-sans-jp);
+  color: #665440;
+  background: #fff;
+  resize: none;
+  transition: all 0.25s ease;
+}
+
+.promptTextarea:focus {
+  outline: none;
+  border-color: #9a6044;
+  box-shadow: 0 0 0 3px rgba(154, 96, 68, 0.1);
+}
+
+.promptButtonContainer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+

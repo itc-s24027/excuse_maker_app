@@ -2,38 +2,54 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { apifetch } from "@/app/lib/apiClient";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/app/lib/firebase";
 export default function ExcuseComponent() {
     const [excuse, setExcuse] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // バックエンドのAPIベースURLを環境変数から取得
     const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
     if (!API_URL) {
         throw new Error("No NEXT_PUBLIC_API_BASE_URLが設定されていません");
     }
 
+    // コンポーネントマウント時にAPIを呼び出して言い訳を取得
     useEffect(() => {
-        async function fetchExcuse() {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                return;
+            }
+
+            // API呼び出し開始
             setLoading(true);
+            // エラー状態リセット
             setError(null);
+
+            // API呼び出し
             try {
-                const res = await fetch(`${API_URL}/gemini-test`);
-                if (!res.ok) throw new Error("API呼び出し失敗");
+                const res = await apifetch(`${API_URL}/gemini-test`);
+                if (!res.ok) {
+                    const text = await res.text();
+                    console.error("API ERROR", res.status, text);
+                    throw new Error("API呼び出し失敗");
+                }
+
                 const data = await res.json();
                 setExcuse(data.excuse);
             } catch (e) {
                 console.error("fetchエラー", e);
-                if (e instanceof Error) {
-                    setError(e.message);
-                } else {
-                    setError(String(e));
-                }
+                setError(e instanceof Error ? e.message : String(e));
             } finally {
                 setLoading(false);
             }
-        }
-        fetchExcuse();
+        });
+
+        return () => unsubscribe();
     }, [API_URL]);
+
     return (
         <div>
             {/*loadingがtrueの時に表示*/}

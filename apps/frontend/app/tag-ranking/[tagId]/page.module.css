@@ -1,0 +1,431 @@
+/* Container */
+.container {
+  padding: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Header */
+.header {
+  margin-bottom: 30px;
+}
+
+.backLink {
+  margin-right: 10px;
+  color: #593e2d;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.25s ease;
+}
+
+.backLink:hover {
+  color: #725e47;
+}
+
+.backIcon {
+  width: 20px;
+  height: 20px;
+  margin-bottom: -4px;
+}
+
+.tagHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.tagIcon {
+  width: 28px;
+  height: 28px;
+  padding-top: 2px;
+}
+
+.tagTitle {
+  margin: 0;
+  color: #625649;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.excuseCount {
+  color: #666;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+/* Excuse List */
+.excuseList {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.excuseItem {
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
+}
+
+.rankingNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #4CAF50;
+  color: #fff;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  font-weight: bold;
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.excuseCard {
+  flex: 1;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Excuse Text */
+.excuseTextContainer {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.catIcon {
+  width: 35px;
+  height: 35px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.excuseText {
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.6;
+  padding-top: 3px;
+  margin: 0;
+}
+
+/* Meta Info */
+.metaInfo {
+  display: flex;
+  gap: 9px;
+  font-size: 15px;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.situationIcon {
+  width: 25px;
+  height: 25px;
+  margin-left: 4px;
+  filter: grayscale(100%);
+}
+
+.situationText {
+  color: #333;
+}
+
+/* Footer */
+.cardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+  flex-wrap: wrap;
+}
+
+.chatInfo {
+  font-size: 15px;
+  color: #999;
+  margin-bottom: 5px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.chatTitle {
+  color: #666;
+}
+
+.createdDate {
+  font-size: 13px;
+  color: #999;
+}
+
+/* Like Button */
+.likeContainer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.likeButton {
+  background: #ffffff;
+  border: 1px solid #999999;
+  cursor: pointer;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  opacity: 1;
+  white-space: nowrap;
+  min-height: 36px;
+}
+
+.likeButton:hover {
+  background: rgba(217, 141, 118, 0.1);
+}
+
+.likeButton.liked {
+  background: rgba(217, 141, 118, 0.63);
+}
+
+.likeIcon {
+  width: 24px;
+  height: 24px;
+  transition: all 0.2s ease;
+  filter: grayscale(50%);
+  flex-shrink: 0;
+}
+
+.likeIcon.liked {
+  filter: none;
+}
+
+.likeCount {
+  font-size: 14px;
+  font-weight: 600;
+  color: #999;
+  transition: all 0.2s ease;
+}
+
+.likeCount.liked {
+  color: #5c5c5c;
+}
+
+/* Empty State */
+.emptyState {
+  padding: 40px;
+  text-align: center;
+  background: #f9f9f9;
+  border-radius: 8px;
+  color: #999;
+}
+
+.emptyStateText {
+  margin: 0;
+}
+
+/* Loading */
+.loading {
+  padding: 20px;
+  text-align: center;
+}
+
+/* Error */
+.error {
+  padding: 20px;
+}
+
+.errorText {
+  color: red;
+}
+
+.errorLink {
+  color: #3c3126;
+  text-decoration: none;
+}
+
+.errorLink:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+/* Hamburger Button */
+.hamburgerButton {
+  display: none;
+}
+
+.mainContainer {
+  position: relative;
+}
+
+.mainContent {
+  width: 100%;
+}
+
+.sidebar {
+  width: 280px;
+}
+
+.sidebar.open {
+  transform: translateX(0);
+}
+
+@media (max-width: 768px) {
+  .hamburgerButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: #665440;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #fff;
+    font-size: 24px;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 105;
+  }
+
+  .hamburgerButton:hover {
+    background: #9a6044;
+  }
+
+  .mainContainer {
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+  }
+
+  .mainContent {
+    padding: 10px;
+    margin-top: 50px;
+  }
+
+  .sidebar {
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 280px;
+    height: 100vh;
+    background: #fff6e9;
+    border-radius: 0;
+    border: none;
+    border-left: 2px solid #c3af96;
+    z-index: 100;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+    padding-top: 20px;
+    gap: 12px;
+    height: 100vh !important;
+    position: fixed !important;
+    top: 0 !important;
+  }
+
+  .container {
+    padding: 15px;
+    max-width: 100%;
+  }
+
+  .tagTitle {
+    font-size: 24px;
+  }
+
+  .tagList {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .excuseCard {
+    padding: 12px;
+  }
+
+  .cardFooter {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .likeContainer {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .hamburgerButton {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .mainContent {
+    padding: 5px;
+    margin-top: 40px;
+  }
+
+  .sidebar {
+    width: 100%;
+  }
+
+  .container {
+    padding: 10px;
+  }
+
+  .header {
+    margin-bottom: 20px;
+  }
+
+  .tagTitle {
+    font-size: 20px;
+  }
+
+  .tagList {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .excuseCard {
+    padding: 10px;
+    border-radius: 8px;
+  }
+
+  .excuseContent {
+    gap: 8px;
+  }
+
+  .likesSection {
+    gap: 6px;
+  }
+
+  .likeButton {
+    height: 36px;
+    font-size: 16px;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
