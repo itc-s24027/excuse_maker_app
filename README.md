@@ -10,6 +10,7 @@
 制作理由：AIを取り入れて、エンタメ性のあるアプリを作りたかったからです。
 
 ### スクリーンショット
+<details>
 <summary><strong>使い方</strong></summary>
 
 1. Googleアカウントでログインしましょう<br>
